@@ -12,7 +12,7 @@ const Layout = () => {
       {/* Main Content */}
       <main className="flex-1 bg-[#0f0f25] text-white min-h-screen">
         <Topbar />
-        <div className="p-6">
+        <div className="p-6 bg-[#020109]">
           <Outlet /> {/* This loads the active page */}
         </div>
       </main>
