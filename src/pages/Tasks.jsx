@@ -2,6 +2,7 @@ import StatCard from "../components/StatCard";
 import TaskCard from "../components/TaskCard";
 import OpportunityCard from "../components/OpportunityCard";
 import CompletedTaskCard from "../components/CompletedTaskCard";
+import angel from "../assets/angel.png";
 
 import { FaVideo, FaClock, FaList, FaEyeSlash } from "react-icons/fa";
 
@@ -9,9 +10,9 @@ const Tasks = () => {
   return (
     <div>
       {/* Header */}
-      <div className="text-center mt-6">
-        <div className="text-5xl">😇</div>
-        <h2 className="text-2xl font-bold mt-2">Let’s earn today!</h2>
+      <div className="flex items-center gap-3 mt-6">
+        <img src={angel} alt="angel_top" className="w-20 h-20"/>
+        <h2 className="text-2xl font-bold">Let’s earn today!</h2>
       </div>
 
       {/* Stats */}
@@ -49,7 +50,7 @@ const Tasks = () => {
         title="Special Campaign – Watch & Earn Double"
         bonus="Bonus: 2× Earnings"
         earnings="3800"
-        status="Pending ⏳"
+        status="Pending"
       />
 
       {/* Completed Tasks */}

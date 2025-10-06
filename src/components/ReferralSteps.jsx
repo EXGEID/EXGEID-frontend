@@ -10,7 +10,7 @@ const ReferralSteps = () => {
     <div className="flex justify-center gap-8 mt-6 flex-wrap">
       {steps.map((step, i) => (
         <div key={i} className="flex flex-col items-center">
-          <div className="w-12 h-12 rounded-full border border-gray-500 flex items-center justify-center text-lg font-bold">
+          <div className="w-12 h-12 rounded-full border-5 border-gray-500 flex items-center justify-center text-lg font-bold">
             {step.level}
           </div>
           <p className="text-xs text-gray-400 mt-2">{step.text}</p>

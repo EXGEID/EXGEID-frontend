@@ -1,4 +1,10 @@
 // src/pages/Withdrawals.jsx
+import React from "react";
+import { FaClock, FaCheckCircle, FaHistory } from "react-icons/fa";
+import access from "../assets/access.png";
+import mastercard from "../assets/mastercard.png";
+import angel from "../assets/angel.png";
+
 const Withdrawals = () => {
   const transactions = [
     { date: "03/08/2025", method: "Bank Transfer", amount: "₦12,350.00", status: "Processing" },
@@ -9,81 +15,131 @@ const Withdrawals = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-[#020109]">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <span role="img" aria-label="angel">👼</span> Withdraw Earnings
+          <img src={angel} alt="angel_top" className="w-20 h-20"/>Withdraw Earnings
         </h1>
-        <button className="bg-yellow-500 text-black px-4 py-2 rounded-lg font-semibold">
+        {/* outline yellow button */}
+        <button className="border border-yellow-500 text-yellow-500 px-4 py-2 rounded-lg font-semibold">
           Withdraw requirement
         </button>
       </div>
 
       {/* Balance & Card Info */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Balance */}
-        <div className="bg-gradient-to-r from-[#1e1e40] to-[#2a2a5a] rounded-xl p-6">
-          <p className="text-lg text-gray-300">Available Balance</p>
-          <h2 className="text-3xl font-bold mt-2">₦12,350.00</h2>
-          <button className="mt-4 bg-red-600 px-6 py-2 rounded-lg">Withdraw</button>
+        {/* Balance card */}
+        <div className="bg-gradient-to-r from-[#06031E] to-[#0E083C] rounded-xl p-6">
+          {/* Balance + Withdraw button side by side */}
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-lg text-gray-300">Available Balance</p>
+              <h2 className="text-3xl font-bold mt-1">₦12,350.00</h2>
+            </div>
+            <div className="flex flex-col items-end">
+              <button className="bg-[#8F0406] px-6 py-2 rounded-lg">Withdraw</button>
+            </div>
+          </div>
 
-          <div className="mt-6 space-y-1">
-            <p className="text-gray-300">Approved: <span className="text-green-400">₦4,499.00</span></p>
-            <p className="text-gray-300">Pending: <span className="text-yellow-400">₦4,499.00</span></p>
-            <p className="text-gray-300">Paid: <span className="text-green-400">₦4,499.00</span></p>
+          {/* Total Breakdown - centered title */}
+          <p className="mt-6 text-gray-300 font-semibold text-center">Total Breakdown</p>
+
+          {/* evenly spaced breakdown columns; text starts from left in each column */}
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-left">
+              <div className="text-sm text-gray-300">Approved</div>
+              <div className="font-semibold text-white mt-1">₦4,499.00</div>
+            </div>
+
+            <div className="text-left">
+              <div className="text-sm text-gray-300">Pending</div>
+              <div className="font-semibold text-yellow-400 mt-1">₦4,499.00</div>
+            </div>
+
+            <div className="text-left">
+              <div className="text-sm text-gray-300">Paid</div>
+              <div className="font-semibold text-green-400 mt-1">₦4,499.00</div>
+            </div>
           </div>
         </div>
 
         {/* Bank Card */}
-        <div className="bg-gradient-to-r from-[#2a2a5a] to-[#3b3b70] rounded-xl p-6 flex flex-col justify-between">
-          <div>
+        <div className="bg-gradient-to-r from-[#110B41] to-[#430417] rounded-xl p-6 flex flex-col justify-between">
+          {/* Bank name + logo placeholder */}
+          <div className="flex justify-between items-center">
             <p className="text-lg font-semibold">Access Bank</p>
-            <p className="mt-2 text-xl tracking-widest">5273 ***********</p>
+            <img
+              src={access}
+              alt="access_logo"
+              className="max-w-[60%] object-contain"
+            />
           </div>
-          <div className="mt-6 flex justify-between items-center">
+
+          {/* Card number */}
+          <p className="mt-6 text-xl tracking-widest">5273 ***********</p>
+
+          {/* Holder + Expiry + Mastercard placeholder */}
+          <div className="mt-6 flex items-center justify-between">
             <div>
-              <p className="text-gray-400">Card Holder Name</p>
-              <p className="font-semibold">ASHLEY ANYARALU</p>
+              <p className="text-gray-400 text-sm">Card Holder Name</p>
+              <p className="font-semibold text-white">ASHLEY ANYARALU</p>
             </div>
+
             <div>
-              <p className="text-gray-400">Expired Date</p>
-              <p className="font-semibold">06/28</p>
+              <p className="text-gray-400 text-sm">Expired Date</p>
+              <p className="font-semibold text-white">06/28</p>
             </div>
+
+            <img
+              src={mastercard}
+              alt="mastercard_logo"
+              className="max-w-[60%] object-contain"
+            />
           </div>
         </div>
       </div>
 
       {/* Transactions */}
-      <div className="bg-[#1a1a3a] rounded-xl p-6">
-        <h2 className="text-xl font-bold mb-4">Recent Transactions</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="text-gray-400 border-b border-gray-700">
-                <th className="p-3">Date</th>
-                <th className="p-3">Method</th>
-                <th className="p-3">Amount</th>
-                <th className="p-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((tx, idx) => (
-                <tr key={idx} className="border-b border-gray-700">
-                  <td className="p-3">{tx.date}</td>
-                  <td className="p-3">{tx.method}</td>
-                  <td className="p-3">{tx.amount}</td>
-                  <td className="p-3">
-                    {tx.status === "Approved" ? (
-                      <span className="bg-green-600 px-3 py-1 rounded-lg text-sm">Approved</span>
-                    ) : (
-                      <span className="bg-yellow-600 px-3 py-1 rounded-lg text-sm">Processing</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="bg-[#09052C] rounded-xl p-6">
+        {/* Title + icon + thin divider */}
+        <div className="flex items-center gap-3 border-b border-gray-700 pb-3">
+          <FaHistory className="text-white" />
+          <h2 className="text-xl font-bold">Recent Transactions</h2>
+        </div>
+
+        {/* header labels for the columns */}
+        <div className="mt-4 grid grid-cols-4 text-gray-400 text-sm px-2">
+          <div className="text-center">Date</div>
+          <div className="text-center">Method</div>
+          <div className="text-center">Amount</div>
+          <div className="text-center">Status</div>
+        </div>
+
+        {/* Transactions list */}
+        <div className="mt-4 space-y-3">
+          {transactions.map((tx, idx) => (
+            <div
+              key={idx}
+              className="bg-gradient-to-r from-[#06031E] to-[#0E083C] p-4 rounded-lg grid grid-cols-4 items-center"
+            >
+              {/* center each field */}
+              <div className="text-center">{tx.date}</div>
+              <div className="text-center">{tx.method}</div>
+              <div className="text-center">{tx.amount}</div>
+              <div className="text-center">
+                {tx.status === "Approved" ? (
+                  <span className="inline-flex items-center justify-center gap-2 text-green-500 bg-green-500/20 px-3 py-1 rounded-full text-xs font-medium">
+                    <FaCheckCircle className="text-green-400" /> Approved
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center justify-center gap-2 text-yellow-500 bg-yellow-500/20 px-3 py-1 rounded-full text-xs font-medium">
+                    <FaClock className="text-yellow-400" /> Processing
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

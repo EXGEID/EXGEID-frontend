@@ -2,6 +2,7 @@
 import React from "react";
 import angel1 from "../assets/angel1.png";
 import angel2 from "../assets/angel2.png";
+import angel from "../assets/angel.png";
 import {
   FaWallet,
   FaSyncAlt,
@@ -34,10 +35,7 @@ const Dashboard = () => {
         {/* Greeting */}
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold flex items-center gap-2">
-            <span role="img" aria-label="angel" className="text-3xl">
-              😇
-            </span>
-            Hi Ashley!!
+            <img src={angel} alt="angel_top" className="w-20 h-20"/>Hi Ashley!!
           </h1>
         </div>
 
@@ -48,13 +46,11 @@ const Dashboard = () => {
             <div className="relative z-10">
               {/* top row */}
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
-                  <img
-                    src={AVATAR_PLACEHOLDER}
-                    alt="avatar"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <img
+                  src="https://randomuser.me/api/portraits/men/75.jpg"
+                  alt="avatar"
+                  className="w-16 h-16 rounded-full"
+                />
                 <div>
                   <p className="text-lg font-semibold">Ashley</p>
                   <p className="text-sm text-gray-400">Referred by: XYZ</p>
@@ -229,7 +225,7 @@ const Dashboard = () => {
                 </label>
               </div>
               <div className="mt-6 flex justify-end">
-                <button className="bg-red-600 text-white px-5 py-2 rounded-lg">
+                <button className="bg-[#8F0406] text-white px-5 py-2 rounded-lg">
                   Continue
                 </button>
               </div>
@@ -249,7 +245,6 @@ const Dashboard = () => {
                       cy="50%"
                       innerRadius={40}
                       outerRadius={55}
-                      paddingAngle={3}
                       dataKey="value"
                     >
                       {data.map((entry, index) => (
@@ -282,15 +277,21 @@ const Dashboard = () => {
             </div>
 
             {/* Daily Check-in */}
-            <div className="bg-gradient-to-br from-[#0E083C] to-[#06031E] rounded-2xl p-6 flex items-center justify-between h-60">
-              <div>
-                <div className="text-sm text-gray-300">Daily Check-In</div>
-                <div className="text-lg font-semibold text-yellow-400">₦300</div>
+            <div className="bg-gradient-to-br from-[#0E083C] to-[#06031E] rounded-2xl p-6">
+              <div className="flex items-center justify-between h-25">
+                <div>
+                  <div className="text-sm text-gray-300">Daily Check-In</div>
+                  <div className="text-lg font-semibold text-yellow-400">₦300</div>
+                </div>
+                <div>
+                  <button className="bg-[#8F0406] px-6 py-2 rounded-lg text-white font-medium">
+                    Claim
+                  </button>
+                </div>
               </div>
-              <div>
-                <button className="bg-red-600 px-6 py-2 rounded-lg text-white font-medium">
-                  Claim
-                </button>
+              <div className="items-center h-15">
+                <div className="text-sm text-gray-300">You've checked in for 4 days straight!</div>
+                <div className="text-sm text-gray-300">Tap to claim today's ₦300 bonus</div>
               </div>
             </div>
           </div>
@@ -345,9 +346,9 @@ const Dashboard = () => {
                     <div className="flex items-center gap-2">
                       <div className="w-10 h-10 rounded-full bg-gray-700 overflow-hidden">
                         <img
-                          src={AVATAR_PLACEHOLDER}
+                          src="https://randomuser.me/api/portraits/men/75.jpg"
                           alt="avatar"
-                          className="w-full h-full object-cover"
+                          className="w-10 h-10 rounded-full"
                         />
                       </div>
                       <span className="font-medium">{t.name}</span>
