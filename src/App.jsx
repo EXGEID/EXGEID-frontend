@@ -17,7 +17,7 @@ function App() {
   return (
     <Routes>
       <Route element={<ModalManager />}>
-        <Route index element={<LandingPage />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
