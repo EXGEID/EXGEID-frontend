@@ -11,6 +11,7 @@ import Referrals from "./pages/Referrals";
 import Tasks from "./pages/Tasks";
 import Profile from "./pages/Profile";
 import Withdrawals from "./pages/Withdrawals";
+import Videos from "./pages/Videos";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/withdrawals" element={<Withdrawals />} />
+          <Route path="/videos" element={<Videos />} />
         </Route>
       </Route>
     </Routes>

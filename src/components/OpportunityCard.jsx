@@ -1,21 +1,26 @@
-import { FaGift } from "react-icons/fa";
-
 const OpportunityCard = ({ title, bonus, earnings, status }) => {
   return (
-    <div className="bg-gradient-to-br from-[#1c1c3c] to-[#0d0d1f] p-4 rounded-xl flex flex-col md:flex-row justify-between items-center mt-4">
-      <div className="flex items-center gap-2">
-        <FaGift className="text-green-400" />
-        <div>
-          <h4 className="font-semibold">{title}</h4>
-          <p className="text-sm text-gray-400">{bonus}</p>
-        </div>
+    <div className="bg-gradient-to-br from-[#0E083C] to-[#06031E] p-6 rounded-xl flex flex-col md:flex-row justify-between items-center mt-4">
+      {/* Left side */}
+      <div>
+        <h4 className="font-semibold">{title}</h4>
+        <p className="text-sm text-gray-400">{bonus}</p>
       </div>
-      <div className="flex items-center gap-6 mt-3 md:mt-0">
-        <div className="text-right">
-          <p className="text-sm text-gray-400">Earnings</p>
-          <p className="text-orange-400 font-bold">₦{earnings}</p>
+
+      <div className="text-center">
+        <p className="text-sm text-gray-400">Earnings</p>
+        <p className="text-yellow-400 font-bold">₦{earnings}</p>
+      </div>
+
+      {/* Right side */}
+      <div className="flex flex-col items-end gap-2 mt-3 md:mt-0">
+        {/* Earnings in the middle */}
+        <div className="text-center">
+          <p className="text-sm text-gray-400">Starts: Tomorrow - 9:00 AM</p>
         </div>
-        <p className="text-yellow-400 font-medium">{status}</p>
+
+        {/* Status */}
+        <span className="text-sm text-yellow-400">{status}</span>
       </div>
     </div>
   );
