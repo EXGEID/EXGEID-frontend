@@ -11,12 +11,13 @@ import Referrals from "./pages/Referrals";
 import Tasks from "./pages/Tasks";
 import Profile from "./pages/Profile";
 import Withdrawals from "./pages/Withdrawals";
+import Videos from "./pages/Videos";
 
 function App() {
   return (
     <Routes>
       <Route element={<ModalManager />}>
-        <Route index element={<LandingPage />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -26,6 +27,7 @@ function App() {
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/withdrawals" element={<Withdrawals />} />
+          <Route path="/videos" element={<Videos />} />
         </Route>
       </Route>
     </Routes>

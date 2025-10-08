@@ -38,7 +38,7 @@ function ModalManager() {
  useEffect(() => {
     const modalNames = modalStack.map((modal) => modal.name.toLowerCase()).join(',');
     const currentPath = location.pathname === '/' ? '' : location.pathname;
-    const newUrl = modalNames ? `${currentPath || '/'}?modals=${modalNames}` : currentPath || '/';
+    const newUrl = modalNames ? `${currentPath || '/'}?modal=${modalNames}` : currentPath || '/';
     console.log('Updating URL from modalStack change:', { currentPath, newUrl }); // Debug
     window.history.pushState({}, document.title, newUrl);
   }, [modalStack, location.pathname]);

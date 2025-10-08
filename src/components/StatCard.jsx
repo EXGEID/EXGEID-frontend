@@ -1,7 +1,7 @@
 const StatCard = ({ title, value, icon }) => {
   return (
-    <div className="bg-gradient-to-br from-[#1c1c3c] to-[#0d0d1f] p-6 rounded-xl flex flex-col items-center justify-center text-center">
-      <div className="text-2xl mb-2">{icon}</div>
+    <div className="bg-gradient-to-br from-[#0E083C] to-[#06031E] p-6 rounded-xl flex flex-col justify-center">
+      <div className="text-2xl mb-2 text-yellow-400">{icon}</div>
       <h4 className="text-sm text-gray-300">{title}</h4>
       <p className="text-lg font-semibold mt-1">{value}</p>
     </div>
