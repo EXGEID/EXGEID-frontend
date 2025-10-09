@@ -1,8 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { useState } from "react";
 import logo from "../assets/logo.png";
-
-
 import {
   FaHome,
   FaVideo,
@@ -10,13 +7,9 @@ import {
   FaTasks,
   FaCreditCard,
   FaUser,
-  FaBars,
-  FaTimes,
 } from "react-icons/fa";
 
-const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-
+const Sidebar = ({ isOpen, setIsOpen }) => {
   const links = [
     { name: "Home", path: "/dashboard", icon: <FaHome /> },
     { name: "Videos", path: "/videos", icon: <FaVideo /> },
@@ -28,36 +21,25 @@ const Sidebar = () => {
 
   return (
     <>
-
-      <div className="md:hidden flex items-center justify-between bg-[#0f0f25] px-4 py-3 text-white fixed top-0 left-0 w-full z-50">
-        <img src={logo} alt="Logo" className="w-28 h-auto" />
-        <button onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
-        </button>
-      </div>
-
-
+      {/* Sidebar Drawer */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-64 bg-[#0f0f25] text-white border-r border-gray-700 transform transition-transform duration-300 z-40
+        className={`fixed top-0 left-0 h-screen w-[60%] md:w-64 bg-[#06031E] text-white border-r border-[#343434]
+        transform transition-transform duration-300 z-[60]
         ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
-
-        <div className="hidden md:flex items-center justify-center p-6">
+        {/* Logo */}
+        <div className="flex items-center justify-center p-6">
           <img src={logo} alt="Logo" className="w-40 h-auto" />
         </div>
 
-
-        <nav
-          className={`flex flex-col space-y-6 ${
-            isOpen ? "mt-20" : "mt-10"
-          } md:mt-10`}
-        >
+        {/* Nav Links */}
+        <nav className="flex flex-col space-y-6 mt-10">
           {links.map((link) => (
             <NavLink
               key={link.name}
               to={link.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 transition-colors block w-full
+                `flex items-center gap-3 px-12 py-8 transition-colors block w-full
                 ${
                   isActive
                     ? "bg-[#430417] text-white"
@@ -73,13 +55,14 @@ const Sidebar = () => {
         </nav>
       </aside>
 
-
+      {/* Dim + blurred background */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-20 backdrop-blur-sm z-30 md:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[55] md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
+
     </>
   );
 };

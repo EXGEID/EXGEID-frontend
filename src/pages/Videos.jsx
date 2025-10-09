@@ -19,7 +19,7 @@ const Videos = () => {
 
           {/* Progress Bar with percentage */}
           <div className="flex items-center justify-between mt-2">
-            <div className="w-full bg-gray-700 h-2 rounded-full mr-3">
+            <div className="w-full bg-white h-2 rounded-full mr-3">
               <div className="bg-red-600 h-2 rounded-full" style={{ width: "70%" }}></div>
             </div>
             <span className="text-sm text-gray-300">70%</span>
