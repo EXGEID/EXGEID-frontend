@@ -21,7 +21,7 @@ const Navbar = () => {
                 />
                 
                 {/* Desktop Menu */}
-                <div className="hidden lg:flex lg:gap-16 md:gap-8 gap-4 items-center justify-center">
+                <div className="hidden lg:flex lg:gap-16 md:gap-8 gap-4 items-center justify-center ml-[5%]">
                     <Link to="/" className="text-[#4F5B76] hover:text-gray-400 hover:scale-105 font-semibold lg:text-[16px] md:text-[13.58px] text-[10.18px]">
                         Home
                     </Link>
@@ -39,13 +39,19 @@ const Navbar = () => {
                     </button>
                 </div>
 
-                {/* Desktop Login Button */}
-                <button 
-                    onClick={() => navigate('?modal=login')} 
+                {/* Desktop Signup and Login Buttons */}
+                <div className="flex gap-6 ml-4"><button 
+                    onClick={() => navigate('?modal=signup')} 
                     className="hidden lg:block bg-[#8F0406] hover:bg-red-700 hover:scale-105 text-white lg:px-4 md:px-3 px-2 lg:py-4 md:py-3 py-2 lg:w-28 md:w-20 rounded-md my-2 md:my-4 lg:text-[16px] md:text-[13.58px] text-[10.18px]"
                 >
-                    Login
+                    Sign Up
                 </button>
+                <button 
+                    onClick={() => navigate('?modal=login')} 
+                    className="hidden lg:block border-2 border-[#FEC84D] font-bold hover:bg-yellow-900 hover:scale-105 text-[#FEC84D] lg:px-4 md:px-3 px-2 lg:py-4 md:py-3 py-2 lg:w-28 md:w-20 rounded-md my-2 md:my-4 lg:text-[16px] md:text-[13.58px] text-[10.18px]"
+                >
+                    Login
+                </button></div>
 
                 {/* Hamburger Icon */}
                 <button 
@@ -104,10 +110,19 @@ const Navbar = () => {
                     </button>
                     <button 
                         onClick={() => {
-                            navigate('?modal=login');
+                            navigate('?modal=signup');
                             toggleMenu();
                         }} 
                         className="bg-[#8F0406] hover:bg-red-700 text-white px-4 py-2 rounded-md text-[14px]"
+                    >
+                        Signup
+                    </button>
+                    <button 
+                        onClick={() => {
+                            navigate('?modal=login');
+                            toggleMenu();
+                        }} 
+                        className="border-2 border-[#FEC84D] font-semibold hover:bg-yellow-900 hover:scale-105 text-[#FEC84D] px-4 py-2 rounded-md text-[14px]"
                     >
                         Login
                     </button>

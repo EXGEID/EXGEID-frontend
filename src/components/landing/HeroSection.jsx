@@ -90,7 +90,7 @@ const HeroSection = () => {
                 
     <div className="bg-[#09052C] p-6 lg:w-[80%] w-full mx-auto shadow-lg">
       {/* Title */}
-      <h2 className="text-white lg:text-[22px] text-[18px] font-semibold mb-4">Sign Up Today to Start Earning</h2>
+      <h2 className="text-white text-center lg:text-[22px] text-[18px] font-semibold mb-4">Sign Up Today to Start Earning</h2>
 
       {/* Email Input 
       <div className="flex items-center border border-gray-500 rounded-lg px-3 py-2 mb-4">
@@ -129,7 +129,7 @@ const HeroSection = () => {
           Sign Up with Google
         </button>
 
-        <button className="flex items-center justify-center w-full bg-[#110854] hover:bg-blue-800 text-white lg:text-[14px] md:text-[12px] text-[10px] font-bold py-2 md:py-4  rounded-lg">
+        {/*<button className="flex items-center justify-center w-full bg-[#110854] hover:bg-blue-800 text-white lg:text-[14px] md:text-[12px] text-[10px] font-bold py-2 md:py-4  rounded-lg">
           <img
             src={FacebookIcon}
             alt="Facebook"
@@ -145,7 +145,7 @@ const HeroSection = () => {
             className="mr-2"
           />
           Sign Up with Apple
-        </button>
+        </button>*/}
       </div>
     </div>
         </div>
