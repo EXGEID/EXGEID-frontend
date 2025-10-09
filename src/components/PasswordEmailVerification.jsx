@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import EmailBanner from "../assets/Mail.png"
 
-const PasswordEmailVerificationModal = ({ onClose, onLoginClick, Email }) => {
+const PasswordEmailVerificationModal = ({ onClose, onResend, initialData }) => {
   const [isAnimated, setIsAnimated] = useState(false);
 
   useEffect(() => {
@@ -38,17 +38,17 @@ const PasswordEmailVerificationModal = ({ onClose, onLoginClick, Email }) => {
           {/* Logo */}
           <img src={EmailBanner} alt="EXGEID Logo" className="lg:mb-6 md:mb-4 mb-1 scale-[72%] origin-center md:scale-[100%] mx-auto" />
           <h2 className="lg:text-[40px] md:text-[32px] text-[24px] font-bold text-[#CACACA] lg:mb-2 mb-1 text-center">Email Sent</h2>
-          <p className="font-regular lg:w-[80%] mx-auto text-[#CACACA] text-center lg:text-[18px] md:text-[14px] text-[10px] lg:mb-4 mb-2 leading-relaxed">Please follow the reset instructions in the email we sent to the following address: {Email}</p>
+          <p className="font-regular lg:w-[80%] mx-auto text-[#CACACA] text-center lg:text-[18px] md:text-[14px] text-[10px] lg:mb-4 mb-2 leading-relaxed">Please follow the reset instructions in the email we sent to the following address: {initialData.email}</p>
 
           <button
-            type="submit"
+            onClick={() => onResend("forgot-password")}
             className="w-full bg-[#8F0406] hover:bg-red-700 hover:scale-110 text-white lg:text-[18px] md:text-[14px] text-[16px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition mt-8 md:mt-12"
           >
             Resend Instructions
           </button>
 
           <p className="text-center text-white font-regular lg:text-[16px] md:text-[12.41px] text-[12px] mt-5 md:mt-8">
-            I already have an account? <Link onClick={onLoginClick} className="text-[#FEC84D] hover:text-yellow-200 underline">Log in</Link>
+            I already have an account? <Link onClick={onClose} className="text-[#FEC84D] hover:text-yellow-200 underline">Log in</Link>
           </p>
         </div>
       </div>

@@ -36,7 +36,8 @@ function ModalManager() {
   }, [location]);
 
  useEffect(() => {
-    const modalNames = modalStack.map((modal) => modal.name.toLowerCase()).join(',');
+    //const modalNames = modalStack.map((modal) => modal.name.toLowerCase()).join(',');
+    const modalNames = modalStack.length > 0 ? modalStack[modalStack.length - 1].name.toLowerCase() : '';
     const currentPath = location.pathname === '/' ? '' : location.pathname;
     const newUrl = modalNames ? `${currentPath || '/'}?modal=${modalNames}` : currentPath || '/';
     console.log('Updating URL from modalStack change:', { currentPath, newUrl }); // Debug
@@ -98,7 +99,7 @@ function ModalManager() {
             {modal?.name === 'signup' && (
                 <SignupModal
                     onClose={closeTopModal}
-                    onSuccess={closeCurrentAndOpenNext}
+                    openModal={openModal}
                     closeCurrentAndOpenNext={closeCurrentAndOpenNext}
                 />
             )}
@@ -111,8 +112,14 @@ function ModalManager() {
             {modal?.name === 'password-change-email-verification' && (
                 <PasswordEmailVerificationModal
                     onClose={closeTopModal}
-                    onSuccess={closeCurrentAndOpenNext}
+                    onResend={closeCurrentAndOpenNext}
                     initialData={modal.data}
+                />
+            )}
+            {modal?.name === 'reset-password' && (
+                <ResetPasswordModal
+                    onClose={closeTopModal}
+                    onSuccess={closeCurrentAndOpenNext}
                 />
             )}
             {modal?.name === 'terms-and-conditions' && (
