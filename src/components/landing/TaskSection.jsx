@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import Task from "./Task";
 import videoIcon from "../../assets/icons/video.svg";
 import globalIcon from "../../assets/icons/global.svg";
@@ -15,12 +16,14 @@ const tasks = [
 ];
 
 const TaskSection = () => {
+    const navigate = useNavigate();
+
     return (
         <div className="bg-[#06031E]">
             <FadeInSection type="slideUp" className="lg:px-48 md:px-8 px-4 lg:py-16 md:py-6 py-4 grid md:grid-cols-[1fr_2fr] lg:gap-48 gap-8">
                 <div>
                     <h3 className="font-bold text-white lg:text-[30.49px] md:text-[22.87px] text-[24px]">Turn your free time into instant <span className="text-[#FEC84D]">Rewards</span></h3>
-                    <button className="bg-[#FEC84D] font-bold text-[#1A202C] lg:text-[15.24px] md:text-[11.43px] text-[13.02px] rounded-md w-full lg:py-4 py-2 lg:my-4 my-2 hover:scale-105 transition-transform duration-300">Earn now</button>
+                    <button onClick={() => navigate('/?modal=signup')} className="bg-[#FEC84D] font-bold text-[#1A202C] lg:text-[15.24px] md:text-[11.43px] text-[13.02px] rounded-md w-full lg:py-4 py-2 lg:my-4 my-2 hover:scale-105 transition-transform duration-300">Earn now</button>
                     <img src={rate} className="lg:w-auto w-[270px] h-[35px]" />
                 </div>
                 <div className="grid lg:gap-6 md:gap-4 gap-3 lg:w-[75%] lg:ml-16">

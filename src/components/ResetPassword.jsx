@@ -7,7 +7,7 @@ import FadeInSection from './FadeInSection';
 
 const API_URL = "https://exgeid-backend.onrender.com/api/v1/auth/password/reset-password";
 
-const ResetPasswordModal = ({ onClose, onSuccess }) => {
+const ResetPasswordModal = ({ onClose, onSuccess, initialData }) => {
   const [isAnimated, setIsAnimated] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,13 +22,12 @@ const ResetPasswordModal = ({ onClose, onSuccess }) => {
 
   useEffect(() => {
     setIsAnimated(true);
-    // Retrieve accessToken from URL query params
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('accessToken');
-    if (token) {
-      setAccessToken(token);
+    // Retrieve accessToken from initialData
+    if (initialData?.accessToken) {
+      console.log('ResetPasswordModal: Received accessToken:', initialData.accessToken); // Debug
+      setAccessToken(initialData.accessToken);
     } else {
-      toast.error("No access token found in URL.", {
+      toast.error("No access token found.", {
         style: {
           background: "#09052C",
           color: "#CACACA",
@@ -40,7 +39,7 @@ const ResetPasswordModal = ({ onClose, onSuccess }) => {
         },
       });
     }
-  }, []);
+  }, [initialData?.accessToken]);
 
   const handleOverlayClick = (e) => {
     e.stopPropagation();

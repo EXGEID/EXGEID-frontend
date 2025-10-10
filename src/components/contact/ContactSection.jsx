@@ -3,6 +3,7 @@ import PhoneIcon from "../../assets/icons/call.svg";
 import LocationIcon from "../../assets/icons/location.svg";
 import MessageIcon from "../../assets/icons/message-text.svg";
 import EmailIcon from "../../assets/icons/email.svg";
+import FadeInSection from '../FadeInSection';
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -26,7 +27,7 @@ const ContactForm = () => {
 
   return (
     <div className="bg-[#09052C] lg:py-32 items-center py-12 px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+      <FadeInSection type="slideUp" className="max-w-7xl mx-auto">
         {/* Desktop Layout */}
         <div className="">
           <div className="grid md:grid-cols-2 md:gap-16 gap-12 items-start">
@@ -116,7 +117,7 @@ const ContactForm = () => {
             </div>
           </div>
         </div>
-      </div>
+      </FadeInSection>
     </div>
   );
 };

@@ -10,7 +10,7 @@ const Mission = () => {
         <div className="bg-[#09052C] lg:py-20 md:py-16 py-8 lg:px-24 md:px-8 px-4 flex md:flex-row flex-col lg:gap-12 md:gap-6 gap-4">
             {cards.map((card, i) => (
                 <div key={i} className="">
-                    <Card title={card.title} description={card.description} />
+                    <Card title={card.title} description={card.description} type={i === 0 ? "slideUp": "slideDown"}/>
                 </div>
             ))}
         </div>

@@ -37,6 +37,9 @@ const ForgotPasswordModal = ({ onClose, onSuccess }) => {
       const payload = {
         email: formData.email
       };
+
+      console.log("Initiating password reset for:", payload);
+
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -46,9 +49,15 @@ const ForgotPasswordModal = ({ onClose, onSuccess }) => {
       });
 
       const data = await response.json();
-      setLoading(false);
+
+      console.log("Password reset initiation API response:", { 
+        status: response.status, 
+        ok: response.ok, 
+        data 
+      });
 
       if (response.ok) {
+        console.log("Password reset initiation successful for email:", formData.email);
         toast.success("Password reset instructions sent!", {
           style: {
             background: "#09052C",
@@ -61,9 +70,12 @@ const ForgotPasswordModal = ({ onClose, onSuccess }) => {
           },
         });
         setTimeout(() => {
+          setLoading(false);
           onSuccess("password-change-email-verification", {email: formData.email});
         }, 5000); // Match toast duration
       } else {
+        console.error("Password reset initiation error:", err);
+        setLoading(false);
         toast.error(data.message || "Failed to send reset request. Please try again.", {
           style: {
             background: "#09052C",
@@ -77,6 +89,7 @@ const ForgotPasswordModal = ({ onClose, onSuccess }) => {
         });
       }
     } catch (err) {
+      console.error("Password reset initiation error:", err);
       setLoading(false);
       toast.error("An error occurred. Please try again later.", {
         style: {

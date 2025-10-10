@@ -17,7 +17,8 @@ function ModalManager() {
     const modalsFromUrl = params.get('modal')?.toLowerCase().split(',').filter(Boolean) || [];
     const token = params.get('token');
     const email = params.get('email');
-    console.log('URL Params:', { modalsFromUrl, token, email }); // Debug
+    const accessToken = params.get('accessToken');
+    console.log('URL Params:', { modalsFromUrl, token, email, accessToken }); // Debug
     if (modalsFromUrl.length > 0) {
       setModalStack((prev) => {
         const currentModals = prev.map((modal) => modal.name);
@@ -27,7 +28,7 @@ function ModalManager() {
         }
         const newStack = modalsFromUrl.map((name) => ({
           name: name.toLowerCase(),
-          data: { token, email },
+          data: { token, email, accessToken },
         }));
         console.log('Setting modalStack from URL:', newStack); // Debug
         return newStack;
@@ -35,14 +36,26 @@ function ModalManager() {
     }
   }, [location]);
 
- useEffect(() => {
-    //const modalNames = modalStack.map((modal) => modal.name.toLowerCase()).join(',');
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
     const modalNames = modalStack.length > 0 ? modalStack[modalStack.length - 1].name.toLowerCase() : '';
+    if (modalNames) {
+      params.set('modal', modalNames);
+      // Preserve accessToken only for reset-password modal
+      if (modalNames !== 'reset-password') {
+        params.delete('accessToken');
+      }
+    } else {
+      params.delete('modal');
+      params.delete('token');
+      params.delete('email');
+      params.delete('accessToken');
+    }
     const currentPath = location.pathname === '/' ? '' : location.pathname;
-    const newUrl = modalNames ? `${currentPath || '/'}?modal=${modalNames}` : currentPath || '/';
-    console.log('Updating URL from modalStack change:', { currentPath, newUrl }); // Debug
+    const newUrl = params.toString() ? `${currentPath || '/'}?${params.toString()}` : currentPath || '/';
+    console.log('Updating URL from modalStack change:', { currentPath, params: params.toString(), newUrl }); // Debug
     window.history.pushState({}, document.title, newUrl);
-  }, [modalStack, location.pathname]);
+  }, [modalStack, location.pathname, location.search]);
 
   const openModal = (modalName, data = {}) => {
     console.log('Opening modal:', modalName, data); // Debug
@@ -120,6 +133,7 @@ function ModalManager() {
                 <ResetPasswordModal
                     onClose={closeTopModal}
                     onSuccess={closeCurrentAndOpenNext}
+                    initialData={modal.data}
                 />
             )}
             {modal?.name === 'terms-and-conditions' && (

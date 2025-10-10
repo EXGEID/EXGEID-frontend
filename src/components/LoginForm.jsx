@@ -8,6 +8,7 @@ import PadlockIcon from "../assets/icons/padlock.svg";
 import GoogleIcon from "../assets/icons/Google.svg";
 
 const API_URL = "https://exgeid-backend.onrender.com/api/v1/auth/login";
+const GOOGLE_LOGIN_URL = "https://exgeid-backend.onrender.com/api/v1/auth/google";
 
 const LoginModal = ({ onClose, openModal, closeCurrentAndOpenNext }) => {
   const [isAnimated, setIsAnimated] = useState(false);
@@ -17,6 +18,7 @@ const LoginModal = ({ onClose, openModal, closeCurrentAndOpenNext }) => {
     password: ""
   });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -113,6 +115,77 @@ const LoginModal = ({ onClose, openModal, closeCurrentAndOpenNext }) => {
         },
       });
       console.error("Network error:", err);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+
+    try {
+      const response = await fetch(GOOGLE_LOGIN_URL, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        //credentials: 'include' // Include refresh token cookie if needed
+      });
+
+      const data = await response.json();
+      setGoogleLoading(false);
+
+      if (response.ok) {
+        // Store accessToken in sessionStorage for Authorization headers
+        if (data.accessToken) {
+          sessionStorage.setItem('accessToken', data.accessToken);
+          console.log("Stored accessToken in sessionStorage:", data.accessToken);
+        }
+        // Store user data in localStorage for UI purposes
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+          console.log("Stored user data in localStorage:", data.user);
+        }
+        toast.success("Google login successful!", {
+          style: {
+            background: "#09052C",
+            color: "#CACACA",
+            border: "1px solid #FEC84D",
+          },
+          iconTheme: {
+            primary: "#FEC84D",
+            secondary: "#09052C",
+          },
+        });
+        // Delay closing modal and navigation to allow toast to display
+        setTimeout(() => {
+          onClose();
+          navigate("/dashboard");
+        }, 5000); // Match toast duration
+      } else {
+        toast.error(data.message || "Google login failed. Please try again.", {
+          style: {
+            background: "#09052C",
+            color: "#CACACA",
+            border: "1px solid #ef4444",
+          },
+          iconTheme: {
+            primary: "#ef4444",
+            secondary: "#09052C",
+          },
+        });
+      }
+    } catch (err) {
+      setGoogleLoading(false);
+      toast.error("An error occurred with Google login. Please try again later.", {
+        style: {
+          background: "#09052C",
+          color: "#CACACA",
+          border: "1px solid #ef4444",
+        },
+        iconTheme: {
+          primary: "#ef4444",
+          secondary: "#09052C",
+        },
+      });
     }
   };
 
@@ -216,11 +289,22 @@ const LoginModal = ({ onClose, openModal, closeCurrentAndOpenNext }) => {
             <hr className="w-full h-[2px] bg-[#B0C9E5] mt-1"/>
           </div>
 
-          <button
-            className="w-full bg-[#110B41] hover:bg-blue-900 hover:scale-110 text-white lg:text-[18px] md:text-[14px] text-[14px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition flex items-center justify-center"
+          <a href={GOOGLE_LOGIN_URL}><button
+            type="button"
+            className={`w-full bg-[#110B41] hover:bg-blue-900 hover:scale-110 text-white lg:text-[18px] md:text-[14px] text-[14px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition flex items-center justify-center ${googleLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={googleLoading}
           >
-            <img src={GoogleIcon} alt="Google Icon" className="lg:mx-4 mx-2"/>Continue with Google
-          </button>
+            {googleLoading ? (
+              <>
+                <span className="spinner"></span>
+                Processing...
+              </>
+            ) : (
+              <>
+                <img src={GoogleIcon} alt="Google Icon" className="lg:mx-4 mx-2"/>Continue with Google
+              </>
+            )}
+          </button></a>
 
           <p className="text-center text-white font-regular lg:text-[16px] md:text-[12.41px] text-[12px] mt-5 md:mt-8">
             Don't have an account? <Link onClick={() => closeCurrentAndOpenNext('signup')} className="text-[#FEC84D] hover:text-yellow-200 underline">Sign up</Link>

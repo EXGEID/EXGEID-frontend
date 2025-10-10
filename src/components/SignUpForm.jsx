@@ -4,15 +4,61 @@ import { Link } from "react-router-dom";
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import toast, { Toaster } from 'react-hot-toast';
+import { z } from "zod";
+import leoProfanity from "leo-profanity";
 import Logo from "../assets/logo2.png";
 import EmailIcon from "../assets/icons/email.svg";
 import PadlockIcon from "../assets/icons/padlock.svg";
-import GoogleIcon from "../assets/icons/Google.svg";
+import GoogleIcon from "../assets/icons/google.svg";
 import FadeInSection from './FadeInSection';
 
-const API_URL = "https://exgeid-backend.onrender.com/api/v1/auth/sign-up";
+// ✅ Load English dictionary explicitly
+leoProfanity.loadDictionary("en");
 
-const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
+// 🧼 Clean text: remove emojis, symbols, diacritics, and extra spaces
+const cleanText = (input) => {
+  return (
+    input
+      // remove emojis and special Unicode symbols
+      .replace(
+        /([\u2700-\u27BF]|[\uE000-\uF8FF]|[\uD83C-\uDBFF\uDC00-\uDFFF]|\p{Extended_Pictographic})/gu,
+        ""
+      )
+      // normalize diacritics (é -> e)
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      // collapse multiple spaces
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+};
+
+// ✅ Importable Zod schema
+const fullNameSchema = z
+  .string({ invalid_type_error: "Name must be a string." })
+  .min(1, { message: "Name is required." })
+  .transform((val) => cleanText(val))
+  .refine(
+    (val) => val.length > 0, // Ensure non-empty after cleaning
+    { message: "Name cannot be empty or spaces only." }
+  )
+  .refine(
+    (val) => /^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/.test(val),
+    { message: "Name must contain only letters, spaces, apostrophes, or hyphens." }
+  )
+  .refine(
+    (val) => val.length >= 2 && val.length <= 50,
+    { message: "Name must be between 2 and 50 characters." }
+  )
+  .refine(
+    (val) => !leoProfanity.check(val),
+    { message: "Name contains inappropriate or sensitive words." }
+  );
+
+const API_URL = "https://exgeid-backend.onrender.com/api/v1/auth/sign-up";
+const GOOGLE_SIGNUP_URL = "https://exgeid-backend.onrender.com/api/v1/auth/google";
+
+const SignupModal = ({ onClose, openModal, closeCurrentAndOpenNext }) => {
   const [isAnimated, setIsAnimated] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -26,7 +72,10 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [fullNameError, setFullNameError] = useState("");
+  const [fullNameValid, setFullNameValid] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     setIsAnimated(true);
@@ -43,6 +92,9 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
       [name]: value
     }));
 
+    if (name === "fullName") {
+      validateFullName(value);
+    }
     if (name === "password") {
       validatePassword(value);
     }
@@ -56,6 +108,37 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
       ...prev,
       phoneNumber: value // Includes country code, e.g., "+2348031234567"
     }));
+  };
+
+  const validateFullName = (value) => {
+    // Skip validation for empty input to avoid premature errors
+    if (!value || value.trim() === "") {
+      setFullNameError("");
+      setFullNameValid(false);
+      return false;
+    }
+
+    // Ensure value is a string to prevent type errors
+    if (typeof value !== "string") {
+      setFullNameError("Invalid input type for name.");
+      setFullNameValid(false);
+      return false;
+    }
+
+    const result = fullNameSchema.safeParse(value);
+    // console.log("Input:", value, "Cleaned:", cleanText(value), "Profanity:", leoProfanity.check(cleanText(value))); // Debug
+    // console.log("Validation result:", result); // Debug
+    if (result.success) {
+      setFullNameError("");
+      setFullNameValid(true);
+      return true;
+    } else {
+      // Safely access the first error message, with fallback
+      const errorMessage = result.error?.issues?.[0]?.message || "Invalid name format.";
+      setFullNameError(errorMessage);
+      setFullNameValid(false);
+      return false;
+    }
   };
 
   const validatePassword = (password) => {
@@ -98,8 +181,10 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
   const validateConfirmPassword = (password, reEnteredPassword) => {
     if (password && reEnteredPassword && password !== reEnteredPassword) {
       setConfirmPasswordError("Passwords must match");
+      return false;
     } else {
       setConfirmPasswordError("");
+      return true;
     }
   };
 
@@ -109,14 +194,19 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
     setPasswordError("");
     setPasswordSuccess("");
     setConfirmPasswordError("");
+    setFullNameError("");
+
+    if (!validateFullName(formData.fullName)) {
+      setLoading(false);
+      return;
+    }
 
     if (!validatePassword(formData.password)) {
       setLoading(false);
       return;
     }
 
-    if (formData.password !== formData.reEnteredPassword) {
-      setConfirmPasswordError("Passwords must match");
+    if (!validateConfirmPassword(formData.password, formData.reEnteredPassword)) {
       setLoading(false);
       return;
     }
@@ -127,7 +217,7 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
         password: formData.password,
         reEnteredPassword: formData.reEnteredPassword,
         fullName: formData.fullName,
-        phoneNumber: formData.phoneNumber, // Includes country code from PhoneInput
+        phoneNumber: formData.phoneNumber,
         referralCode: formData.referralCode || undefined
       };
       console.log("API payload:", payload); // Debug: Verify phoneNumber includes country code
@@ -187,6 +277,67 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
         },
       });
       console.error("Network error:", err);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setGoogleLoading(true);
+
+    try {
+      const response = await fetch(GOOGLE_SIGNUP_URL, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      setGoogleLoading(false);
+
+      if (response.ok) {
+        toast.success("Google login successful!", {
+          style: {
+            background: "#09052C",
+            color: "#CACACA",
+            border: "1px solid #FEC84D",
+          },
+          iconTheme: {
+            primary: "#FEC84D",
+            secondary: "#09052C",
+          },
+        });
+        // Delay closing modal to allow toast to display
+        setTimeout(() => {
+          onClose();
+          // Redirect to Google OAuth callback or handle response as needed
+          // window.location.href = data.redirectUrl || '/google-callback';
+        }, 5000); // Match toast duration
+      } else {
+        toast.error(data.message || "Google login failed. Please try again.", {
+          style: {
+            background: "#09052C",
+            color: "#CACACA",
+            border: "1px solid #ef4444",
+          },
+          iconTheme: {
+            primary: "#ef4444",
+            secondary: "#09052C",
+          },
+        });
+      }
+    } catch (err) {
+      setGoogleLoading(false);
+      toast.error("An error occurred with Google login. Please try again later.", {
+        style: {
+          background: "#09052C",
+          color: "#CACACA",
+          border: "1px solid #ef4444",
+        },
+        iconTheme: {
+          primary: "#ef4444",
+          secondary: "#09052C",
+        },
+      });
     }
   };
 
@@ -268,9 +419,13 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
               value={formData.fullName}
               onChange={handleInputChange}
               placeholder="Enter name"
-              className="w-full bg-[#09052C] text-white p-2 lg:px-4 py-3 md:py-4 rounded-md mt-1 font-regular md:text-[16px] text-[12px] focus:outline-none focus:border-[#FEC84D] focus:ring-1 focus:ring-[#FEC84D]"
+              className={`w-full bg-[#09052C] text-white p-2 lg:px-4 py-3 md:py-4 rounded-md mt-1 font-regular md:text-[16px] text-[12px] focus:outline-none focus:ring-1 focus:ring-[#FEC84D] focus:border ${
+                fullNameError ? 'focus:border-red-500' : fullNameValid && formData.fullName ? 'focus:border-green-500' : 'focus:border-[#09052C]'
+              }`}
               required
             />
+            {fullNameError && <FadeInSection><p className="text-red-500 text-[12px] mt-1">{fullNameError}</p></FadeInSection>}
+            {fullNameValid && formData.fullName && <FadeInSection><p className="text-green-500 text-[12px] mt-1">Name looks good!</p></FadeInSection>}
 
             <label className="block font-medium text-[#CACACA] md:text-[14px] text-[10px] mt-3 sm:mt-4">Email</label>
             <div className="relative">
@@ -327,7 +482,9 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
                 value={formData.password}
                 onChange={handleInputChange}
                 placeholder="Enter your Password"
-                className="w-full pl-10 pr-4 py-3 md:py-4 bg-[#09052C] text-white rounded-md mt-1 font-regular md:text-[16px] text-[12px] focus:outline-none focus:border-[#FEC84D] focus:ring-1 focus:ring-[#FEC84D]"
+                className={`w-full pl-10 pr-4 py-3 md:py-4 bg-[#09052C] text-white rounded-md mt-1 font-regular md:text-[16px] text-[12px] focus:outline-none focus:border-[#FEC84D] focus:ring-1 focus:ring-[#FEC84D] focus:border ${
+                passwordError ? 'focus:border-red-500' : passwordSuccess ? 'focus:border-green-500' : 'focus:border-[#09052C]'
+                }`}
                 required
               />
               <span className="absolute right-4 lg:top-3 top-2.5 mt-4 transform -translate-y-1/2 cursor-pointer" onClick={() => setShowPassword((prev) => !prev)}>
@@ -346,7 +503,9 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
                 value={formData.reEnteredPassword}
                 onChange={handleInputChange}
                 placeholder="Confirm Password"
-                className="w-full pl-10 pr-4 py-3 md:py-4 bg-[#09052C] text-white rounded-md mt-1 font-regular md:text-[16px] text-[12px] focus:outline-none focus:border-[#FEC84D] focus:ring-1 focus:ring-[#FEC84D]"
+                className={`w-full pl-10 pr-4 py-3 md:py-4 bg-[#09052C] text-white rounded-md mt-1 font-regular md:text-[16px] text-[12px] focus:outline-none focus:border-[#FEC84D] focus:ring-1 focus:ring-[#FEC84D] focus:border ${
+                confirmPasswordError ? 'focus:border-red-500' :  'focus:border-green-500'
+                }`}
                 required
               />
               <span className="absolute right-4 lg:top-3 top-2.5 mt-4 transform -translate-y-1/2 cursor-pointer" onClick={() => setShowPassword((prev) => !prev)}>
@@ -367,8 +526,8 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
 
             <button
               type="submit"
-              className={`w-full bg-[#8F0406] hover:bg-red-700 hover:scale-110 text-white lg:text-[18px] md:text-[14px] text-[16px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition mt-8 md:mt-12 flex items-center justify-center ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              disabled={loading}
+              className={`w-full bg-[#8F0406] hover:bg-red-700 hover:scale-110 text-white lg:text-[18px] md:text-[14px] text-[16px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition mt-8 md:mt-12 flex items-center justify-center ${loading || !fullNameValid ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={loading || !fullNameValid}
             >
               {loading ? (
                 <>
@@ -387,11 +546,22 @@ const SignupModal = ({ onClose, closeCurrentAndOpenNext }) => {
             <hr className="w-full h-[2px] bg-[#B0C9E5] mt-1"/>
           </div>
 
-          <button
-            className="w-full bg-[#110B41] hover:bg-blue-900 hover:scale-110 text-white lg:text-[18px] md:text-[14px] text-[14px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition flex items-center justify-center"
+          <a href={GOOGLE_SIGNUP_URL}><button
+            type="button"
+            className={`w-full bg-[#110B41] hover:bg-blue-900 hover:scale-110 text-white lg:text-[18px] md:text-[14px] text-[14px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition flex items-center justify-center ${googleLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={googleLoading}
           >
-            <img src={GoogleIcon} alt="Google Icon" className="lg:mx-4 mx-2"/>Continue with Google
-          </button>
+            {googleLoading ? (
+              <>
+                <span className="spinner"></span>
+                Processing...
+              </>
+            ) : (
+              <>
+                <img src={GoogleIcon} alt="Google Icon" className="lg:mx-4 mx-2"/>Continue with Google
+              </>
+            )}
+          </button></a>
 
           {/* Terms & Conditions */}
           <p className="font-regular lg:text-[16px] md:text-[12.41px] text-[12px] text-[#CACACA] text-center mt-4 mb-4">
