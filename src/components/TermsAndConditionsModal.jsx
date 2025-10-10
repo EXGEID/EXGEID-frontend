@@ -1,7 +1,53 @@
 import { useState, useEffect } from 'react';
+import FadeInSection from './FadeInSection';
+
+const TypingText = ({ text, delay = 0, typingSpeed = 100, className, colorClass = "text-white", disableCursorOnMobile = false }) => {
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
+  const [showCursor, setShowCursor] = useState(true);
+
+  useEffect(() => {
+    const startTimer = setTimeout(() => {
+      let currentIndex = 0;
+      const interval = setInterval(() => {
+        if (currentIndex < text.length) {
+          setDisplayedText(text.substring(0, currentIndex + 1));
+          currentIndex++;
+        } else {
+          clearInterval(interval);
+          setIsTypingComplete(true);
+          setShowCursor(false);
+        }
+      }, typingSpeed);
+
+      return () => clearInterval(interval);
+    }, delay);
+
+    return () => clearTimeout(startTimer);
+  }, [text, delay, typingSpeed]);
+
+  useEffect(() => {
+    if (isTypingComplete) return;
+    const cursorInterval = setInterval(() => {
+      setShowCursor((prev) => !prev);
+    }, 500);
+
+    return () => clearInterval(cursorInterval);
+  }, [isTypingComplete]);
+
+  return (
+    <span className={`inline ${className}`}>
+      <span>{displayedText}</span>
+      {showCursor && (
+        <span className={`${colorClass} ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100 ${disableCursorOnMobile ? 'hidden md:inline' : ''}`}>|</span>
+      )}
+    </span>
+  );
+};
 
 const TermsAndConditionsModal = ({ onClose }) => {
   const [isAnimated, setIsAnimated] = useState(false);
+  const titleText = "Terms and Conditions";
 
   useEffect(() => {
     setIsAnimated(true);
@@ -26,8 +72,15 @@ const TermsAndConditionsModal = ({ onClose }) => {
         className={`relative bg-[linear-gradient(to_bottom_left,#0E083C_55%,#06031E_100%)] rounded-2xl w-full max-w-[90%] md:max-w-md lg:max-w-[60%] transform transition-all duration-300 ${isAnimated ? 'opacity-100 scale-100' : 'opacity-0 scale-95'} overflow-hidden max-h-[90vh]`}
       >
         <div className="overflow-hidden max-h-[90vh] px-4 md:px-8 py-12 md:pt-16 lg:pt-14 md:pb-16 lg:pb-36">
-          <h2 className="lg:text-[36px] md:text-[27.92px] text-[24px] font-semibold text-[#FEC84D] lg:mb-6 mb-2">Terms and Conditions</h2>
-          <div className="overflow-y-auto lg:max-h-[55vh] max-h-[63vh] pr-4 md:pr-12 text-[#CACACA] text-[12px] md:text-[16px] lg:text-[17px]">
+          <h2 className="lg:text-[36px] md:text-[27.92px] text-[24px] font-semibold text-[#FEC84D] lg:mb-6 mb-2">
+            <TypingText 
+              text={titleText}
+              typingSpeed={100}
+              className="text-[#FEC84D]"
+              colorClass="text-[#FEC84D]"
+            />
+          </h2>
+          <FadeInSection className="overflow-y-auto lg:max-h-[55vh] max-h-[63vh] pr-4 md:pr-12 text-[#CACACA] text-[12px] md:text-[16px] lg:text-[17px]">
            <p>EXGEID COOPERATIVE SOCIETY</p>
 <p>Effective Date: June 20, 2025</p>
 <p class="mt-4 sm:mt-6 md:mt-8 lg:mt-10">1. Acceptance of Terms</p>
@@ -81,7 +134,7 @@ const TermsAndConditionsModal = ({ onClose }) => {
 <p>For questions, complaints, or inquiries regarding these Terms, you may contact us at:</p>
 <p>📧 Email: exgeid@gmail.com</p>
 <p>📍 Address: EXGEID COOPERATIVE SOCIETY, Ajah. Lagos, Nigeria</p>
-          </div>
+          </FadeInSection>
           <div className="flex w-full items-center justify-end gap-8 md:gap-12 lg:gap-16 mt-4 md:mt-6 lg:mt-12">
             <button onClick={onClose} className="text-[#FEC84D] hover:text-yellow-100 font-medium text-[10px] md:text-[14px] lg:text-[17px]">Cancel</button>
             <button onClick={onClose} className="bg-[#160B6D] hover:bg-blue-900 hover:scale-105 px-6 md:px-10 lg:px-12 py-2 md:py-3 lg:py-4 text-white font-medium text-[10px] md:text-[14px] lg:text-[17px]">Agree</button>

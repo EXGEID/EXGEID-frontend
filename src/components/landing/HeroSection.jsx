@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Card from "./Card";
+import toast, { Toaster } from "react-hot-toast";
 import youtubeIcon from "../../assets/youtube.png";
 import tiktokIcon from "../../assets/tiktok.png";
 import referIcon from "../../assets/refer.png";
@@ -18,6 +19,8 @@ const cards = [
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const GOOGLE_SIGNUP_URL = "https://exgeid-backend.onrender.com/api/v1/auth/google";
+  const [googleLoading, setGoogleLoading] = useState(false);
   const fullText = 'Your gateway to Earning & Growing';
   const prefix = 'Your gateway to ';
   const [displayedText, setDisplayedText] = useState('');
@@ -65,10 +68,100 @@ const HeroSection = () => {
     );
   };
 
+  const handleGoogleSignup = async () => {
+      setGoogleLoading(true);
+  
+      try {
+        const response = await fetch(GOOGLE_SIGNUP_URL, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+  
+        const data = await response.json();
+        setGoogleLoading(false);
+  
+        if (response.ok) {
+          toast.success("Google login successful!", {
+            style: {
+              background: "#09052C",
+              color: "#CACACA",
+              border: "1px solid #FEC84D",
+            },
+            iconTheme: {
+              primary: "#FEC84D",
+              secondary: "#09052C",
+            },
+          });
+          // Delay closing modal to allow toast to display
+          setTimeout(() => {
+            onClose();
+            // Redirect to Google OAuth callback or handle response as needed
+            // window.location.href = data.redirectUrl || '/google-callback';
+          }, 5000); // Match toast duration
+        } else {
+          toast.error(data.message || "Google login failed. Please try again.", {
+            style: {
+              background: "#09052C",
+              color: "#CACACA",
+              border: "1px solid #ef4444",
+            },
+            iconTheme: {
+              primary: "#ef4444",
+              secondary: "#09052C",
+            },
+          });
+        }
+      } catch (err) {
+        setGoogleLoading(false);
+        toast.error("An error occurred with Google login. Please try again later.", {
+          style: {
+            background: "#09052C",
+            color: "#CACACA",
+            border: "1px solid #ef4444",
+          },
+          iconTheme: {
+            primary: "#ef4444",
+            secondary: "#09052C",
+          },
+        });
+      }
+    };
+
   return (
     <div className="bg-[#06031E] pt-28 md:pt-36">
       <FadeInSection type="slideUp">
-            <div className="bg-[url('/carousel.png')] bg-no-repeat bg-center bg-cover">
+          <div className="bg-[url('/carousel.png')] bg-no-repeat bg-center bg-cover">
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                duration: 5000,
+                style: {
+                  zIndex: 9999,
+                },
+              }}
+              containerStyle={{
+                top: 20,
+                zIndex: 9999,
+              }}
+            />
+              <style jsx>{`
+                  .spinner {
+                  display: inline-block;
+                  width: 1.5rem;
+                  height: 1.5rem;
+                  border: 3px solid #FEC84D;
+                  border-top: 3px solid transparent;
+                  border-radius: 50%;
+                  animation: spin 1s linear infinite;
+                  margin-right: 0.5rem;
+                }
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
                 <div className="mx-auto lg:py-12 md:py-6 py-4 lg:w-[40%] w-[65%]">
                     <p className="font-semibold text-white lg:text-[48px] md:text-[36px] text-[24px] text-center lg:leading-[69px] md:leading-[51.75px] leading-[38.81px] inline-block">
                       {renderText()}
@@ -120,14 +213,22 @@ const HeroSection = () => {
 
       {/* Social Buttons */}
       <div className="flex flex-col space-y-3">
-        <button className="flex items-center justify-center w-full bg-gray-800 hover:bg-gray-600 text-white lg:text-[14px] md:text-[12px] text-[10px] font-bold py-2 md:py-4 rounded-lg">
-          <img
-            src={GoogleIcon}
-            alt="Google"
-            className="mr-2"
-          />
-          Sign Up with Google
-        </button>
+        <a href={GOOGLE_SIGNUP_URL}><button
+          type="button"
+          className={`w-full bg-gray-800 hover:bg-gray-600 text-white lg:text-[14px] md:text-[12px] text-[10px] font-bold py-2 md:py-4 rounded-lg mb-4 transition flex items-center justify-center ${googleLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={googleLoading}
+        >
+          {googleLoading ? (
+            <>
+              <span className="spinner"></span>
+              Processing...
+            </>
+            ) : (
+            <>
+              <img src={GoogleIcon} alt="Google Icon" className="mr-2"/>Sign Up with Google
+            </>
+          )}
+        </button></a>
 
         {/*<button className="flex items-center justify-center w-full bg-[#110854] hover:bg-blue-800 text-white lg:text-[14px] md:text-[12px] text-[10px] font-bold py-2 md:py-4  rounded-lg">
           <img

@@ -14,7 +14,7 @@ const CoreValues = () => {
             <div className="grid lg:grid-cols-4 grid-cols-2 lg:gap-12 md:gap-6 gap-4">
                 {cards.map((card, i) => (
                     <div key={i} className="">
-                        <Card title={card.title} description={card.description} />
+                        <Card title={card.title} description={card.description} type={i % 2 === 0 ? "slideLeft": "slideUp"} delay={i + 2} />
                     </div>
                 ))}
             </div>
