@@ -1,4 +1,5 @@
 // src/App.jsx
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/Landing";
 import About from "./pages/About";
@@ -16,6 +17,10 @@ import Videos from "./pages/Videos";
 function App() {
   return (
     <Routes>
+      {/* Redirect root path to dashboard */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      {/* Main layout routes */}
       <Route element={<ModalManager />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<About />} />
