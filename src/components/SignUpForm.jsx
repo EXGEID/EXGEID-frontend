@@ -9,7 +9,7 @@ import leoProfanity from "leo-profanity";
 import Logo from "../assets/logo2.png";
 import EmailIcon from "../assets/icons/email.svg";
 import PadlockIcon from "../assets/icons/padlock.svg";
-import GoogleIcon from "../assets/icons/google.svg";
+import GoogleIcon from "../assets/icons/Google.svg";
 import FadeInSection from './FadeInSection';
 
 // ✅ Load English dictionary explicitly
