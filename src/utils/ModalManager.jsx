@@ -19,6 +19,7 @@ function ModalManager() {
     const email = params.get('email');
     const accessToken = params.get('accessToken');
     console.log('URL Params:', { modalsFromUrl, token, email, accessToken }); // Debug
+    console.log('URL Params:', { modalsFromUrl, token, email }); // Debug
     if (modalsFromUrl.length > 0) {
       setModalStack((prev) => {
         const currentModals = prev.map((modal) => modal.name);
@@ -29,6 +30,7 @@ function ModalManager() {
         const newStack = modalsFromUrl.map((name) => ({
           name: name.toLowerCase(),
           data: { token, email, accessToken },
+          data: { token, email },
         }));
         console.log('Setting modalStack from URL:', newStack); // Debug
         return newStack;
@@ -56,6 +58,14 @@ function ModalManager() {
     console.log('Updating URL from modalStack change:', { currentPath, params: params.toString(), newUrl }); // Debug
     window.history.pushState({}, document.title, newUrl);
   }, [modalStack, location.pathname, location.search]);
+ useEffect(() => {
+    //const modalNames = modalStack.map((modal) => modal.name.toLowerCase()).join(',');
+    const modalNames = modalStack.length > 0 ? modalStack[modalStack.length - 1].name.toLowerCase() : '';
+    const currentPath = location.pathname === '/' ? '' : location.pathname;
+    const newUrl = modalNames ? `${currentPath || '/'}?modal=${modalNames}` : currentPath || '/';
+    console.log('Updating URL from modalStack change:', { currentPath, newUrl }); // Debug
+    window.history.pushState({}, document.title, newUrl);
+  }, [modalStack, location.pathname]);
 
   const openModal = (modalName, data = {}) => {
     console.log('Opening modal:', modalName, data); // Debug
