@@ -2,7 +2,8 @@ import axios from "axios";
 
 // Set your base URL here
 const API = axios.create({
-  baseURL: "https://exgeid-backend.onrender.com",
+  baseURL: "http://localhost:5173/api/v1",
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },

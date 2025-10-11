@@ -1,15 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { FaBars } from "react-icons/fa";
 import Sidebar from "./Sidebar";
+import { mockProfileData } from "../api/mockProfileData";
+import MockModeBadge from "../components/MockModeBadge";
+
 
 const Topbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState({ name: "Loading...", avatar: "" });
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get(
+          "https://exgeid-backend.onrender.com/users/get/profile-info"
+        );
+        const data = res.data;
+        setUser({
+          name: data.personalDetails?.fullName || "User",
+          avatar: "https://randomuser.me/api/portraits/men/75.jpg",
+        });
+      } catch (error) {
+        console.warn("⚠️ Using mock profile data:", error.message);
+        const data = mockProfileData;
+        setUser({
+          name: data.personalDetails?.fullName,
+          avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+        });
+      }
+    };
+    fetchUser();
+  }, []);
 
   return (
     <>
-      {/* Topbar */}
       <div className="bg-[#06031E] flex justify-between items-center px-8 py-8 border-b border-[#343434] relative z-50">
-        {/* Hamburger icon (visible only on mobile) */}
         <button
           onClick={() => setIsOpen(true)}
           className="text-white text-xl md:hidden"
@@ -17,18 +43,19 @@ const Topbar = () => {
           <FaBars />
         </button>
 
-        {/* User info */}
         <div className="flex items-center ml-auto">
           <img
-            src="https://randomuser.me/api/portraits/men/75.jpg"
+            src={user.avatar}
             alt="avatar"
             className="w-8 h-8 rounded-full"
           />
-          <span className="ml-3 text-white font-medium">Ashley</span>
+          <span className="ml-3 text-white font-medium">{user.name}</span>
         </div>
+        {/* 🧪 Show Mock Badge */}
+        {process.env.NODE_ENV === "development" && <MockModeBadge />}
+
       </div>
 
-      {/* Sidebar (handles slide-in and backdrop blur) */}
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
     </>
   );
