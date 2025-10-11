@@ -16,9 +16,6 @@ import Videos from "./pages/Videos";
 function App() {
   return (
     <Routes>
-      {/* Redirect root path to dashboard */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
       {/* Main layout routes */}
       <Route element={<ModalManager />}>
         <Route path="/" element={<LandingPage />} />
