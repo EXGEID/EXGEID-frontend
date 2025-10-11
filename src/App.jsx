@@ -1,5 +1,4 @@
-// src/App.jsx
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/Landing";
 import About from "./pages/About";
 import ContactUs from "./pages/ContactUs";
@@ -15,15 +14,16 @@ import Videos from "./pages/Videos";
 
 function App() {
   return (
-    <Routes>
-      {/* Main layout routes */}
-      <Route element={<ModalManager />}>
+    <>
+      <ModalManager />
+      <Routes>
+        {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-      {/* Main layout routes */}
+        {/* Protected or dashboard routes */}
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/referrals" element={<Referrals />} />
@@ -32,8 +32,8 @@ function App() {
           <Route path="/withdrawals" element={<Withdrawals />} />
           <Route path="/videos" element={<Videos />} />
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }
 

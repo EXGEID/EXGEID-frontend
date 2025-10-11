@@ -30,7 +30,6 @@ function ModalManager() {
         const newStack = modalsFromUrl.map((name) => ({
           name: name.toLowerCase(),
           data: { token, email, accessToken },
-          data: { token, email },
         }));
         console.log('Setting modalStack from URL:', newStack); // Debug
         return newStack;
