@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { FaEdit } from "react-icons/fa";
 import angelVid from "../assets/angelVid.png";
 import { mockProfileData } from "../api/mockProfileData";
@@ -8,14 +7,16 @@ import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(
+        const res = await fetch(
           "https://exgeid-backend.onrender.com/users/get/profile-info"
         );
-        setProfile(res.data);
+        const data = await res.json();
+        setProfile(data);
       } catch (error) {
         console.warn("⚠️ Using mock profile data:", error.message);
         setProfile(mockProfileData);
@@ -26,8 +27,8 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.get("https://exgeid-backend.onrender.com/api/v1/auth/logout", {
-        withCredentials: true, // include cookies if used for auth
+      await fetch("https://exgeid-backend.onrender.com/api/v1/auth/logout", {
+        credentials: "include", // include cookies if used for auth
       });
 
       // Optionally clear local storage/session
@@ -74,7 +75,7 @@ const Profile = () => {
           </span>
           <p className="text-gray-400 text-sm">@{personalDetails.fullName.split(" ")[0].toLowerCase()}</p>
 
-          <button className="mt-6 bg-[#8F0406] w-full max-w-md mx-auto py-2 rounded-lg font-medium hover:bg-red-700">
+          <button onClick={handleLogout} className="mt-6 bg-[#8F0406] w-full max-w-md mx-auto py-2 rounded-lg font-medium hover:bg-red-700">
             Log out
           </button>
 
