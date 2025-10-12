@@ -30,13 +30,24 @@ const Dashboard = () => {
   });
 
   const [isMock, setIsMock] = useState(false);
+  const DASHBOARD_API_URL = "https://exgeid-backend.onrender.com/api/v1/users/dashboard-info";
+  const REFRESH_TOKEN_URL = "https://exgeid-backend.onrender.com/api/v1/refresh/token";
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      const accessToken = sessionStorage.getItem("accessToken");
+
       try {
-        const res = await fetch(
-          "https://exgeid-backend.onrender.com/users/dashboard-info"
-        );
+        const res = await fetch(DASHBOARD_API_URL, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error("Request failed");
+        }
+
         const data = await res.json();
 
         // ✅ Map API data into the structure your component needs
@@ -54,32 +65,74 @@ const Dashboard = () => {
           videos: data.dailyTaskData?.completedTasks?.watchedVideos || 0,
         });
       } catch (err) {
-        console.warn("⚠️ Backend not reachable, using mock data:", err.message);
-        setIsMock(true);
+        // Attempt to refresh token on failure
+        try {
+          const refreshRes = await fetch(REFRESH_TOKEN_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
 
-        // ✅ Use mock data when backend fails
-        const data = mockDashboardData;
+          if (!refreshRes.ok) {
+            throw new Error("Token refresh failed");
+          }
 
-        setUserData({
-          name: data.userFullName || "User",
-          referredBy: data.userProfileData?.referredBy || "Unknown",
-          totalEarnings: data.userWalletData?.paidAmount || 0,
-          referrals: data.dailyTaskData?.completedTasks?.referralCount || 0,
-          tasksCompleted:
-            (data.dailyTaskData?.completedTasks?.accountsSubscribed || 0) +
-            (data.dailyTaskData?.completedTasks?.watchedVideos || 0),
-          totalTasks:
-            (data.dailyTaskData?.totalTasks?.accountsToSubscribe || 0) +
-            (data.dailyTaskData?.totalTasks?.totalVideos || 0),
-          videos: data.dailyTaskData?.completedTasks?.watchedVideos || 0,
-        });
+          const { accessToken: newAccessToken } = await refreshRes.json();
+          sessionStorage.setItem("accessToken", newAccessToken);
+
+          // Retry the dashboard data fetch with new token
+          const retryRes = await fetch(DASHBOARD_API_URL, {
+            headers: {
+              Authorization: `Bearer ${newAccessToken}`,
+            },
+          });
+
+          if (!retryRes.ok) {
+            throw new Error("Retry request failed");
+          }
+
+          const data = await retryRes.json();
+
+          setUserData({
+            name: data.userFullName || "User",
+            referredBy: data.userProfileData?.referredBy || "Unknown",
+            totalEarnings: data.userWalletData?.paidAmount || 0,
+            referrals: data.dailyTaskData?.completedTasks?.referralCount || 0,
+            tasksCompleted:
+              (data.dailyTaskData?.completedTasks?.accountsSubscribed || 0) +
+              (data.dailyTaskData?.completedTasks?.watchedVideos || 0),
+            totalTasks:
+              (data.dailyTaskData?.totalTasks?.accountsToSubscribe || 0) +
+              (data.dailyTaskData?.totalTasks?.totalVideos || 0),
+            videos: data.dailyTaskData?.completedTasks?.watchedVideos || 0,
+          });
+        } catch (refreshErr) {
+          console.warn("⚠️ Backend not reachable, using mock data:", refreshErr.message);
+          setIsMock(true);
+
+          // ✅ Use mock data when backend fails
+          const data = mockDashboardData;
+
+          setUserData({
+            name: data.userFullName || "User",
+            referredBy: data.userProfileData?.referredBy || "Unknown",
+            totalEarnings: data.userWalletData?.paidAmount || 0,
+            referrals: data.dailyTaskData?.completedTasks?.referralCount || 0,
+            tasksCompleted:
+              (data.dailyTaskData?.completedTasks?.accountsSubscribed || 0) +
+              (data.dailyTaskData?.completedTasks?.watchedVideos || 0),
+            totalTasks:
+              (data.dailyTaskData?.totalTasks?.accountsToSubscribe || 0) +
+              (data.dailyTaskData?.totalTasks?.totalVideos || 0),
+            videos: data.dailyTaskData?.completedTasks?.watchedVideos || 0,
+          });
+        }
       }
     };
 
     fetchDashboardData();
   }, []);
-
-
 
   const transactions = [
     { name: "Lorem Amaka", amount: "₦12,000.00" },
