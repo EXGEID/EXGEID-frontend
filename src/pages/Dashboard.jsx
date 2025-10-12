@@ -63,7 +63,7 @@ const Dashboard = () => {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
-          credentials: "include", // Include cookies if needed
+          //credentials: "include", // Include cookies if needed
         });
 
         if (!res.ok) {
@@ -96,14 +96,17 @@ const Dashboard = () => {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include", // Include cookies for refresh token
+            //credentials: "include", // Include cookies for refresh token
           });
 
           if (!refreshRes.ok) {
             throw new Error(`Token refresh failed: ${refreshRes.status}`);
           }
 
-          const { accessToken: newAccessToken } = await refreshRes.json();
+          const refreshData = await refreshRes.json();
+          console.log("Attempting to refresh token...", refreshData);
+
+          const { accessToken: newAccessToken } = await refreshData.accessToken;
           console.log("New Access Token:", newAccessToken); // Debug new token
           sessionStorage.setItem("accessToken", newAccessToken);
 
