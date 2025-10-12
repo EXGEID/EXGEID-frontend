@@ -1,4 +1,5 @@
 // src/pages/Withdrawals.jsx
+import { useNavigate } from "react-router-dom";
 import React from "react";
 import { FaClock, FaCheckCircle, FaHistory } from "react-icons/fa";
 import access from "../assets/access.png";
@@ -14,6 +15,8 @@ const Withdrawals = () => {
     { date: "02/07/2025", method: "Card", amount: "₦12,350.00", status: "Approved" },
   ];
 
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6 bg-[#020109] text-white p-4 sm:p-6 md:p-8 min-h-screen">
       {/* Header */}
@@ -24,7 +27,7 @@ const Withdrawals = () => {
         </h1>
 
         {/* outline yellow button */}
-        <button className="border border-yellow-500 text-yellow-500 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold text-sm sm:text-base hover:bg-yellow-500/10">
+        <button onClick={() => navigate('?modal=withdrawal-requirements')} className="border border-yellow-500 text-yellow-500 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold text-sm sm:text-base hover:bg-yellow-500/10">
           Withdraw requirement
         </button>
       </div>
