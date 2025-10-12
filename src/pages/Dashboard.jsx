@@ -71,6 +71,7 @@ const Dashboard = () => {
         }
 
         const data = await res.json();
+        console.log("Dashboard info fetched successfully", data);
 
         // ✅ Map API data into the structure your component needs
         setUserData({
@@ -120,6 +121,7 @@ const Dashboard = () => {
           }
 
           const data = await retryRes.json();
+          console.log("Dashboard info after token refresh fetched successfully", data);
 
           setUserData({
             name: data.userFullName || "User",
