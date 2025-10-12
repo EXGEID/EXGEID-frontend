@@ -36,16 +36,38 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       const accessToken = sessionStorage.getItem("accessToken");
+      console.log("Access Token:", accessToken); // Debug token
+
+      if (!accessToken) {
+        console.warn("⚠️ No access token found, using mock data");
+        setIsMock(true);
+        setUserData({
+          name: mockDashboardData.userFullName || "User",
+          referredBy: mockDashboardData.userProfileData?.referredBy || "Unknown",
+          totalEarnings: mockDashboardData.userWalletData?.paidAmount || 0,
+          referrals: mockDashboardData.dailyTaskData?.completedTasks?.referralCount || 0,
+          tasksCompleted:
+            (mockDashboardData.dailyTaskData?.completedTasks?.accountsSubscribed || 0) +
+            (mockDashboardData.dailyTaskData?.completedTasks?.watchedVideos || 0),
+          totalTasks:
+            (mockDashboardData.dailyTaskData?.totalTasks?.accountsToSubscribe || 0) +
+            (mockDashboardData.dailyTaskData?.totalTasks?.totalVideos || 0),
+          videos: mockDashboardData.dailyTaskData?.completedTasks?.watchedVideos || 0,
+        });
+        return;
+      }
 
       try {
         const res = await fetch(DASHBOARD_API_URL, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
           },
+          credentials: "include", // Include cookies if needed
         });
 
         if (!res.ok) {
-          throw new Error("Request failed");
+          throw new Error(`Dashboard request failed: ${res.status}`);
         }
 
         const data = await res.json();
@@ -67,29 +89,34 @@ const Dashboard = () => {
       } catch (err) {
         // Attempt to refresh token on failure
         try {
+          console.log("Attempting to refresh token...");
           const refreshRes = await fetch(REFRESH_TOKEN_URL, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
+            credentials: "include", // Include cookies for refresh token
           });
 
           if (!refreshRes.ok) {
-            throw new Error("Token refresh failed");
+            throw new Error(`Token refresh failed: ${refreshRes.status}`);
           }
 
           const { accessToken: newAccessToken } = await refreshRes.json();
+          console.log("New Access Token:", newAccessToken); // Debug new token
           sessionStorage.setItem("accessToken", newAccessToken);
 
           // Retry the dashboard data fetch with new token
           const retryRes = await fetch(DASHBOARD_API_URL, {
             headers: {
               Authorization: `Bearer ${newAccessToken}`,
+              "Content-Type": "application/json",
             },
+            credentials: "include",
           });
 
           if (!retryRes.ok) {
-            throw new Error("Retry request failed");
+            throw new Error(`Retry request failed: ${retryRes.status}`);
           }
 
           const data = await retryRes.json();
