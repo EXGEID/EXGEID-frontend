@@ -39,11 +39,8 @@ const Footer = () => {
                     position: "top-center",
                     duration: 5000,
                 });
-                // Delay clearing the form to allow toast to display
-                setTimeout(() => {
-                    setEmail(""); // Clear the form
-                    setLoading(false);
-                }, 5000); // Match toast duration
+                setEmail(""); // Clear the form
+                setLoading(false);
             } else {
                 throw new Error("Subscription failed");
             }

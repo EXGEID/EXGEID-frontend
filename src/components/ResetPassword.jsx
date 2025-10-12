@@ -154,10 +154,11 @@ const ResetPasswordModal = ({ onClose, onSuccess, initialData }) => {
       });
 
       const data = await response.json();
+      setFormData({ password: '', reEnteredPassword: '' });
       setLoading(false);
 
       if (response.ok) {
-        toast.success("Password reset successful!", {
+        toast.success("Password reset successful! Please wait...", {
           style: {
             background: "#09052C",
             color: "#CACACA",

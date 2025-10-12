@@ -230,6 +230,7 @@ const SignupModal = ({ onClose, openModal, closeCurrentAndOpenNext }) => {
       });
 
       const data = await response.json();
+      setFormData({ fullName: '', email: '', password: '', reEnteredPassword: '', phoneNumber: '', referralCode: '' });
       setLoading(false);
 
       if (response.ok) {

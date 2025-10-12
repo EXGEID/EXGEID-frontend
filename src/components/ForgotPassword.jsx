@@ -69,6 +69,7 @@ const ForgotPasswordModal = ({ onClose, onSuccess }) => {
             secondary: "#09052C",
           },
         });
+        setFormData({ email: '' });
         setTimeout(() => {
           setLoading(false);
           onSuccess("password-change-email-verification", {email: formData.email});
