@@ -54,17 +54,17 @@ const Topbar = () => {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include", // Include cookies for refresh token
+            //credentials: "include", // Include cookies for refresh token
           });
 
           if (!refreshRes.ok) {
             throw new Error(`Token refresh failed: ${refreshRes.status}`);
           }
 
-          const data = await refreshRes.json();
-          console.log("profile data:", data);
+          const refreshData = await refreshRes.json();
+          console.log("profile data:", refreshData);
 
-          const { accessToken: newAccessToken } = data;
+          const { accessToken: newAccessToken } = refreshData;
           console.log("New Access Token:", newAccessToken); // Debug new token
           sessionStorage.setItem("accessToken", newAccessToken);
 
@@ -74,7 +74,7 @@ const Topbar = () => {
               Authorization: `Bearer ${newAccessToken}`,
               "Content-Type": "application/json",
             },
-            credentials: "include",
+            //credentials: "include",
           });
 
           if (!retryRes.ok) {
