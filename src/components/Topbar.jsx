@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { FaBars } from "react-icons/fa";
 import Sidebar from "./Sidebar";
 import { mockProfileData } from "../api/mockProfileData";
 import MockModeBadge from "../components/MockModeBadge";
-
 
 const Topbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,10 +11,10 @@ const Topbar = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get(
+        const res = await fetch(
           "https://exgeid-backend.onrender.com/users/get/profile-info"
         );
-        const data = res.data;
+        const data = await res.json();
         setUser({
           name: data.personalDetails?.fullName || "User",
           avatar: "https://randomuser.me/api/portraits/men/75.jpg",
@@ -53,7 +51,6 @@ const Topbar = () => {
         </div>
         {/* 🧪 Show Mock Badge */}
         {process.env.NODE_ENV === "development" && <MockModeBadge />}
-
       </div>
 
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
