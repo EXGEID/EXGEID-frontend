@@ -63,14 +63,14 @@ const LoginModal = ({ onClose, openModal, closeCurrentAndOpenNext }) => {
 
       if (response.ok) {
         // Store accessToken in sessionStorage for Authorization headers
-        if (data.accessToken) {
-          sessionStorage.setItem('accessToken', data.accessToken);
-          console.log("Stored accessToken in sessionStorage:", data.accessToken);
+        if (data.data.accessToken) {
+          sessionStorage.setItem('accessToken', data.data.accessToken);
+          console.log("Stored accessToken in sessionStorage:", data.data.accessToken);
         }
         // Store user data in localStorage for UI purposes
-        if (data.user) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-          console.log("Stored user data in localStorage:", data.user);
+        if (data.data.user) {
+          localStorage.setItem('user', JSON.stringify(data.data.user));
+          console.log("Stored user data in localStorage:", data.data.user);
         }
         toast.success("Login successful! Please wait...", {
           style: {
