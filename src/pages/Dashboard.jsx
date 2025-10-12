@@ -59,6 +59,7 @@ const Dashboard = () => {
 
       try {
         const res = await fetch(DASHBOARD_API_URL, {
+          method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
@@ -92,7 +93,7 @@ const Dashboard = () => {
         try {
           console.log("Attempting to refresh token...");
           const refreshRes = await fetch(REFRESH_TOKEN_URL, {
-            method: "POST",
+            method: "GET",
             headers: {
               "Content-Type": "application/json",
             },
@@ -104,7 +105,7 @@ const Dashboard = () => {
           }
 
           const refreshData = await refreshRes.json();
-          console.log("Attempting to refresh token...", refreshData);
+          console.log("Refresh token data...", refreshData);
 
           const { accessToken: newAccessToken } = await refreshData.accessToken;
           console.log("New Access Token:", newAccessToken); // Debug new token
