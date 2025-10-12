@@ -1,3 +1,4 @@
+// src/App.jsx
 import { Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/Landing";
 import About from "./pages/About";
@@ -14,16 +15,12 @@ import Videos from "./pages/Videos";
 
 function App() {
   return (
-    <>
-      <ModalManager />
-      <Routes>
-        {/* Public routes */}
+    <Routes>
+      <Route element={<ModalManager />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-
-        {/* Protected or dashboard routes */}
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/referrals" element={<Referrals />} />
@@ -32,8 +29,8 @@ function App() {
           <Route path="/withdrawals" element={<Withdrawals />} />
           <Route path="/videos" element={<Videos />} />
         </Route>
-      </Routes>
-    </>
+      </Route>
+    </Routes>
   );
 }
 
