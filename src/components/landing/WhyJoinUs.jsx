@@ -20,10 +20,10 @@ const WhyJoinUs = () => {
                     {reasons.map((reason, i) => (
                         <div>
                             <div key={i} className="md:block hidden">
-                                <Reason header={reason.header} description={reason.description} type={"slideRight"} delay={i + 2} />
+                                <Reason header={reason.header} description={reason.description} type={"slideRight"} delay={i} />
                             </div>
                             <div key={i} className="md:hidden block">
-                                <Reason header={reason.header} description={reason.description} type={"zoom"} delay={i + 2} />
+                                <Reason header={reason.header} description={reason.description} type={"zoom"} delay={i} />
                             </div>
                         </div>
                     ))}

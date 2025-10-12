@@ -57,6 +57,8 @@ const LoginModal = ({ onClose, openModal, closeCurrentAndOpenNext }) => {
       });
 
       const data = await response.json();
+      setFormData({ email: '', password: '' });
+      
       setLoading(false);
 
       if (response.ok) {
@@ -70,7 +72,7 @@ const LoginModal = ({ onClose, openModal, closeCurrentAndOpenNext }) => {
           localStorage.setItem('user', JSON.stringify(data.user));
           console.log("Stored user data in localStorage:", data.user);
         }
-        toast.success("Login successful!", {
+        toast.success("Login successful! Please wait...", {
           style: {
             background: "#09052C",
             color: "#CACACA",

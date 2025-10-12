@@ -4,6 +4,7 @@ import LocationIcon from "../../assets/icons/location.svg";
 import MessageIcon from "../../assets/icons/message-text.svg";
 import EmailIcon from "../../assets/icons/email.svg";
 import FadeInSection from '../FadeInSection';
+import toast, { Toaster } from 'react-hot-toast';
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,8 @@ const ContactForm = () => {
     email: '',
     message: ''
   });
+  const [loading, setLoading] = useState(false);
+  const API_URL = "https://exgeid-backend.onrender.com/api/v1/public/support-email/send/mail"; // Contact API endpoint
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -20,18 +23,93 @@ const ContactForm = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    setLoading(true);
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        toast.success("Message sent successfully!", {
+          style: {
+            background: "#09052C",
+            color: "#CACACA",
+            border: "1px solid #FEC84D",
+            zIndex: 9999,
+          },
+          iconTheme: {
+            primary: "#FEC84D",
+            secondary: "#09052C",
+          },
+          position: "top-center",
+          duration: 5000,
+        });
+        setFormData({ fullName: '', email: '', message: '' });
+        setLoading(false);
+      } else {
+        throw new Error("Failed to send message");
+      }
+    } catch (error) {
+      console.error("Contact form error:", error);
+      toast.error("Failed to send message. Please try again.", {
+        style: {
+          background: "#09052C",
+          color: "#CACACA",
+          border: "1px solid #ef4444",
+          zIndex: 9999,
+        },
+        iconTheme: {
+          primary: "#ef4444",
+          secondary: "#09052C",
+        },
+        position: "top-center",
+        duration: 5000,
+      });
+      setLoading(false);
+    }
   };
 
   return (
     <div className="bg-[#09052C] lg:py-32 items-center py-12 px-6 lg:px-8">
+      <style jsx>{`
+        .spinner {
+          display: inline-block;
+          width: 1rem;
+          height: 1rem;
+          border: 2px solid #FEC84D;
+          border-top: 2px solid transparent;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-right: 0.5rem;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 5000,
+          style: {
+            zIndex: 9999,
+          },
+        }}
+        containerStyle={{
+          top: 20,
+          zIndex: 9999,
+        }}
+      />
       <FadeInSection type="slideUp" className="max-w-7xl mx-auto">
-        {/* Desktop Layout */}
         <div className="">
           <div className="grid md:grid-cols-2 md:gap-16 gap-12 items-start">
-            {/* Left Side - Contact Info */}
             <div className="">
               <h1 className="lg:text-[32px] md:text-[20px] text-[20.79px] font-semibold text-[#CACACA] lg:mb-6 mb-2">Get In Touch</h1>
               <p className="font-semibold text-[#CACACA] lg:text-[16px] md:text-[14px] text-[12.39px] lg:mb-12 mb-6 leading-relaxed">
@@ -39,7 +117,6 @@ const ContactForm = () => {
               </p>
               
               <div className="space-y-8">
-                {/* Office Address */}
                 <div className="flex items-start space-x-4">
                   <img src={LocationIcon}/>
                   <div>
@@ -49,7 +126,6 @@ const ContactForm = () => {
                   </div>
                 </div>
                 
-                {/* Phone Number */}
                 <div className="flex items-start space-x-4">
                   <img src={PhoneIcon}/>
                   <div>
@@ -58,7 +134,6 @@ const ContactForm = () => {
                   </div>
                 </div>
                 
-                {/* Email */}
                 <div className="flex items-start space-x-4">
                   <img src={MessageIcon}/>
                   <div>
@@ -69,10 +144,9 @@ const ContactForm = () => {
               </div>
             </div>
             
-            {/* Right Side - Form */}
             <div>
               <h2 className="font-semibold lg:text-[22px] md:text-[16.62px] text-[15.59px] text-[#B5B5B5] lg:mb-6 mb-2">Send us a message</h2>
-              <div className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <input
                     type="text"
@@ -81,6 +155,8 @@ const ContactForm = () => {
                     value={formData.fullName}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 bg-transparent border border-gray-600 rounded-lg font-regular text-[#A9A8CD] lg:text-[15.37px] md:text-[12.56px] text-[11.52px] focus:outline-none focus:border-[#FEC84D] focus:ring-1 focus:ring-[#FEC84D]"
+                    required
+                    disabled={loading}
                   />
                 </div>
                 
@@ -93,6 +169,8 @@ const ContactForm = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     className="w-full pl-10 pr-4 py-3 bg-transparent border border-gray-600 rounded-lg font-regular text-[#A9A8CD] lg:text-[15.37px] md:text-[12.56px] text-[11.52px] focus:outline-none focus:border-[#FEC84D] focus:ring-1 focus:ring-[#FEC84D]"
+                    required
+                    disabled={loading}
                   />
                 </div>
                 
@@ -104,16 +182,26 @@ const ContactForm = () => {
                     value={formData.message}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 bg-transparent border border-gray-600 rounded-lg font-regular text-[#A9A8CD] lg:text-[15.37px] md:text-[12.56px] text-[11.52px] focus:outline-none focus:border-[#FEC84D] focus:ring-1 focus:ring-[#FEC84D] resize-none"
+                    required
+                    disabled={loading}
                   />
                 </div>
                 
                 <button
-                  onClick={handleSubmit}
-                  className="w-full bg-[#8F0406] hover:bg-red-700 hover:scale-105 text-white font-medium lg:text-[15.37px] md:text-[12px] text-[11.52px] md:py-4 py-3 px-6 rounded-lg transition-colors duration-200"
+                  type="submit"
+                  className={`w-full bg-[#8F0406] hover:bg-red-700 hover:scale-105 text-white font-medium lg:text-[15.37px] md:text-[12px] text-[11.52px] md:py-4 py-3 px-6 rounded-lg transition-colors duration-200 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={loading}
                 >
-                  Submit
+                  {loading ? (
+                    <>
+                      <span className="spinner"></span>
+                      Sending...
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         </div>
