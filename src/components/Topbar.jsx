@@ -7,25 +7,93 @@ import MockModeBadge from "../components/MockModeBadge";
 const Topbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState({ name: "Loading...", avatar: "" });
+  const PROFILE_API_URL = "https://exgeid-backend.onrender.com/api/v1/users/get/profile-info";
+  const REFRESH_TOKEN_URL = "https://exgeid-backend.onrender.com/api/v1/refresh/token";
 
   useEffect(() => {
     const fetchUser = async () => {
+      const accessToken = sessionStorage.getItem("accessToken");
+      console.log("Access Token:", accessToken); // Debug token
+
+      if (!accessToken) {
+        console.warn("⚠️ No access token found, using mock data");
+        const data = mockProfileData;
+        setUser({
+          name: data.personalDetails?.fullName || "User",
+          avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+        });
+        return;
+      }
+
       try {
-        const res = await fetch(
-          "https://exgeid-backend.onrender.com/users/get/profile-info"
-        );
+        const res = await fetch(PROFILE_API_URL, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          //credentials: "include", // Include cookies if needed
+        });
+
+        if (!res.ok) {
+          throw new Error(`Profile request failed: ${res.status}`);
+        }
+
         const data = await res.json();
+        console.log("profile data:", data);
         setUser({
           name: data.personalDetails?.fullName || "User",
           avatar: "https://randomuser.me/api/portraits/men/75.jpg",
         });
-      } catch (error) {
-        console.warn("⚠️ Using mock profile data:", error.message);
-        const data = mockProfileData;
-        setUser({
-          name: data.personalDetails?.fullName,
-          avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-        });
+      } catch (err) {
+        // Attempt to refresh token on failure
+        try {
+          console.log("Attempting to refresh token...");
+          const refreshRes = await fetch(REFRESH_TOKEN_URL, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include", // Include cookies for refresh token
+          });
+
+          if (!refreshRes.ok) {
+            throw new Error(`Token refresh failed: ${refreshRes.status}`);
+          }
+
+          const data = await refreshRes.json();
+          console.log("profile data:", data);
+
+          const { accessToken: newAccessToken } = data;
+          console.log("New Access Token:", newAccessToken); // Debug new token
+          sessionStorage.setItem("accessToken", newAccessToken);
+
+          // Retry the profile data fetch with new token
+          const retryRes = await fetch(PROFILE_API_URL, {
+            headers: {
+              Authorization: `Bearer ${newAccessToken}`,
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          });
+
+          if (!retryRes.ok) {
+            throw new Error(`Retry request failed: ${retryRes.status}`);
+          }
+
+          const data = await retryRes.json();
+          setUser({
+            name: data.personalDetails?.fullName || "User",
+            avatar: "https://randomuser.me/api/portraits/men/75.jpg",
+          });
+        } catch (refreshErr) {
+          console.warn("⚠️ Backend not reachable, using mock profile data:", refreshErr.message);
+          const data = mockProfileData;
+          setUser({
+            name: data.personalDetails?.fullName || "User",
+            avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+          });
+        }
       }
     };
     fetchUser();
