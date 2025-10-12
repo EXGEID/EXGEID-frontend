@@ -11,10 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.12.2",
-    "framer-motion": "^12.23.24",
+    "framer-motion": "^12.23.22",
     "leo-profanity": "^1.8.0",
-    "lucide-react": "^0.545.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.6.0",
