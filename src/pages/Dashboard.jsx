@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import angel1 from "../assets/angel1.png";
 import angel2 from "../assets/angel2.png";
 import angel from "../assets/angel.png";
@@ -35,10 +34,10 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const res = await axios.get(
+        const res = await fetch(
           "https://exgeid-backend.onrender.com/users/dashboard-info"
         );
-        const data = res.data;
+        const data = await res.json();
 
         // ✅ Map API data into the structure your component needs
         setUserData({
