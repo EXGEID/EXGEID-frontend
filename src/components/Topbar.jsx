@@ -225,7 +225,7 @@ const Topbar = () => {
         }}
       />
       
-      <div className="w-full md:w-auto bg-[#06031E] flex justify-between items-center px-8 py-4 md:py-8 md:pl-8 md:pr-16 border-b border-[#343434] fixed z-50">
+      <div className="fixed top-0 left-0 w-full md:w-[calc(100%-16rem)] bg-[#06031E] flex justify-between items-center px-4 md:px-8 py-4 md:py-8 md:pl-8 md:pr-16 border-b border-[#343434] md:ml-64 z-50">
         <button
           onClick={() => setIsOpen(true)}
           className="text-white text-xl md:hidden"
