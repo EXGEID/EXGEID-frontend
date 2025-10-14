@@ -249,10 +249,11 @@ const Topbar = () => {
             {user.isLoading ? "Loading..." : user.name}
           </span>
         </div>
+      </div>
 
-        <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-      </>
-    );
+      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+    </>
+  );
 };
 
 export default Topbar;
