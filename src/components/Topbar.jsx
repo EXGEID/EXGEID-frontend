@@ -1,38 +1,78 @@
 import { useState, useEffect } from "react";
 import { FaBars } from "react-icons/fa";
+import { Toaster, toast } from "react-hot-toast";
 import Sidebar from "./Sidebar";
-import { mockProfileData } from "../api/mockProfileData";
-import MockModeBadge from "../components/MockModeBadge";
 
 const Topbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState({ name: "Loading...", avatar: "" });
+  const [user, setUser] = useState({ 
+    name: "Loading...", 
+    avatar: null,
+    hasError: false,
+    isLoading: true
+  });
+  
   const DAILY_TASK_API_URL = "https://exgeid-backend.onrender.com/api/v1/task/fetch/daily-task";
   const PROFILE_API_URL = "https://exgeid-backend.onrender.com/api/v1/users/get/profile-info";
   const REFRESH_TOKEN_URL = "https://exgeid-backend.onrender.com/api/v1/refresh/token";
 
+  // Utility function to get initials from name
+  const getInitials = (fullName) => {
+    if (!fullName || user.hasError) return "?";
+    return fullName
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase())
+      .join('')
+      .slice(0, 2);
+  };
+
+  // Show error toast with custom styling
+  const showErrorToast = (message) => {
+    toast.error(message, {
+      position: "top-center",
+      style: {
+        background: "#09052C",
+        color: "#CACACA",
+        border: "1px solid #ef4444",
+        zIndex: 9999,
+      },
+      iconTheme: {
+        primary: "#ef4444",
+        secondary: "#09052C",
+      },
+      duration: 5000,
+    });
+  };
+
+  // Show success toast with #FEC84D border and icon
+  const showSuccessToast = (message) => {
+    toast.success(message, {
+      position: "top-center",
+      style: {
+        background: "#09052C",
+        color: "#CACACA",
+        border: "1px solid #FEC84D", // Updated to #FEC84D
+        zIndex: 9999,
+      },
+      iconTheme: {
+        primary: "#FEC84D", // Updated icon color to match border
+        secondary: "#09052C",
+      },
+      duration: 3000,
+    });
+  };
+
   useEffect(() => {
-    const fetchUser = async () => {
-      const accessToken = sessionStorage.getItem("accessToken");
-      console.log("Access Token:", accessToken); // Debug token
-
-      if (!accessToken) {
-        console.warn("⚠️ No access token found, using mock data");
-        const data = mockProfileData;
-        setUser({
-          name: data.personalDetails?.fullName || "User",
-          avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-        });
-        return;
-      }
-
+    const fetchUserData = async (token) => {
+      setUser(prev => ({ ...prev, isLoading: true }));
+      
       try {
-        // First, fetch daily task data
+        // 1. ALWAYS fetch daily tasks FIRST
         console.log("Fetching daily task data...");
         const taskRes = await fetch(DAILY_TASK_API_URL, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
@@ -44,12 +84,12 @@ const Topbar = () => {
         const taskData = await taskRes.json();
         console.log("Daily task data:", taskData);
 
-        // Then fetch profile data
+        // 2. THEN fetch profile data
         console.log("Fetching profile data...");
         const profileRes = await fetch(PROFILE_API_URL, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
@@ -61,110 +101,158 @@ const Topbar = () => {
         const profileData = await profileRes.json();
         console.log("Profile data:", profileData);
         
+        // Validate and set user data
+        const fullName = profileData.personalDetails?.fullName;
+        if (!fullName) {
+          throw new Error("Invalid profile data: missing full name");
+        }
+
         setUser({
-          name: profileData.personalDetails?.fullName || "User",
-          avatar: "https://randomuser.me/api/portraits/men/75.jpg",
+          name: fullName,
+          avatar: null,
+          hasError: false,
+          isLoading: false
         });
 
       } catch (err) {
-        console.error("Initial fetch failed:", err.message);
+        console.error("Fetch failed:", err.message);
+        showErrorToast("Failed to load user data. Please refresh or log in again.");
+        setUser({
+          name: "Loading failed",
+          avatar: null,
+          hasError: true,
+          isLoading: false
+        });
+        throw err; // Re-throw for token refresh handling
+      }
+    };
+
+    const attemptTokenRefresh = async () => {
+      try {
+        console.log("Attempting to refresh token...");
+        const refreshRes = await fetch(REFRESH_TOKEN_URL, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!refreshRes.ok) {
+          throw new Error(`Token refresh failed: ${refreshRes.status}`);
+        }
+
+        const refreshData = await refreshRes.json();
+        const { accessToken: newAccessToken } = refreshData;
         
-        // Attempt to refresh token on failure
-        try {
-          console.log("Attempting to refresh token...");
-          const refreshRes = await fetch(REFRESH_TOKEN_URL, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
+        if (!newAccessToken) {
+          throw new Error("No new access token received");
+        }
 
-          if (!refreshRes.ok) {
-            throw new Error(`Token refresh failed: ${refreshRes.status}`);
-          }
+        console.log("New Access Token received, retrying requests...");
+        sessionStorage.setItem("accessToken", newAccessToken);
+        showSuccessToast("Session refreshed successfully!");
 
-          const refreshData = await refreshRes.json();
-          console.log("Refresh data:", refreshData);
+        // Retry with new token: DAILY TASKS FIRST, then PROFILE
+        await fetchUserData(newAccessToken);
 
-          const { accessToken: newAccessToken } = refreshData;
-          console.log("New Access Token:", newAccessToken);
-          sessionStorage.setItem("accessToken", newAccessToken);
+      } catch (refreshErr) {
+        console.error("Token refresh failed:", refreshErr.message);
+        showErrorToast("Session expired. Please log in again.");
+        setUser({
+          name: "Session Expired",
+          avatar: null,
+          hasError: true,
+          isLoading: false
+        });
+        // Optionally redirect to login
+        // window.location.href = '/login';
+      }
+    };
 
-          // Retry both requests with new token
-          console.log("Retrying daily task fetch with new token...");
-          const retryTaskRes = await fetch(DAILY_TASK_API_URL, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${newAccessToken}`,
-              "Content-Type": "application/json",
-            },
-          });
+    const initialize = async () => {
+      const accessToken = sessionStorage.getItem("accessToken");
+      
+      if (!accessToken) {
+        showErrorToast("Authentication required. Please log in.");
+        setUser({
+          name: "Not Logged In",
+          avatar: null,
+          hasError: true,
+          isLoading: false
+        });
+        return;
+      }
 
-          if (!retryTaskRes.ok) {
-            console.warn("Daily task retry failed:", retryTaskRes.status);
-          } else {
-            const retryTaskData = await retryTaskRes.json();
-            console.log("Retry daily task data:", retryTaskData);
-          }
-
-          // Retry profile fetch
-          console.log("Retrying profile fetch with new token...");
-          const retryProfileRes = await fetch(PROFILE_API_URL, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${newAccessToken}`,
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (!retryProfileRes.ok) {
-            throw new Error(`Retry profile request failed: ${retryProfileRes.status}`);
-          }
-
-          const profileData = await retryProfileRes.json();
-          setUser({
-            name: profileData.personalDetails?.fullName || "User",
-            avatar: "https://randomuser.me/api/portraits/men/75.jpg",
-          });
-
-        } catch (refreshErr) {
-          console.warn("⚠️ Backend not reachable, using mock profile data:", refreshErr.message);
-          const data = mockProfileData;
-          setUser({
-            name: data.personalDetails?.fullName || "User",
-            avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-          });
+      try {
+        await fetchUserData(accessToken);
+      } catch (err) {
+        // Attempt token refresh only for auth-related errors
+        if (err.message.includes("401") || err.message.includes("403")) {
+          await attemptTokenRefresh();
         }
       }
     };
-    fetchUser();
+
+    initialize();
   }, []);
+
+  const AvatarInitials = () => (
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-sm font-semibold flex-shrink-0 relative">
+      {user.isLoading ? (
+        <div className="w-4 h-4 border-2 border-[#FEC84D] border-t-transparent rounded-full animate-spin"></div> // Updated spinner color to #FEC84D
+      ) : (
+        <span className="text-[#ef4444]">{getInitials(user.name)}</span>
+      )}
+    </div>
+  );
 
   return (
     <>
+      {/* Toaster with high z-index positioned within this component */}
+      <Toaster 
+        position="top-center"
+        containerStyle={{
+          zIndex: 9999,
+          top: '20px',
+        }}
+        toastOptions={{
+          style: {
+            background: "#09052C",
+            color: "#CACACA",
+            zIndex: 9999,
+          },
+          duration: 5000,
+        }}
+      />
+      
       <div className="bg-[#06031E] flex justify-between items-center px-8 py-8 border-b border-[#343434] relative z-50">
         <button
           onClick={() => setIsOpen(true)}
           className="text-white text-xl md:hidden"
+          disabled={user.isLoading}
         >
           <FaBars />
         </button>
 
         <div className="flex items-center ml-auto">
-          <img
-            src={user.avatar}
-            alt="avatar"
-            className="w-8 h-8 rounded-full"
-          />
-          <span className="ml-3 text-white font-medium">{user.name}</span>
+          {/* Circular avatar with initials and loading spinner */}
+          <AvatarInitials />
+          <span 
+            className={`ml-3 font-medium transition-colors ${
+              user.isLoading 
+                ? 'text-gray-400' 
+                : user.hasError 
+                ? 'text-red-400' 
+                : 'text-white'
+            }`}
+          >
+            {user.isLoading ? "Loading..." : user.name}
+          </span>
         </div>
-        {/* 🧪 Show Mock Badge */}
-        {process.env.NODE_ENV === "development" && <MockModeBadge />}
-      </div>
 
-      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-    </>
-  );
+        <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+      </>
+    );
 };
 
 export default Topbar;
