@@ -7,6 +7,7 @@ import MockModeBadge from "../components/MockModeBadge";
 const Topbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState({ name: "Loading...", avatar: "" });
+  const DAILY_TASK_API_URL = "https://exgeid-backend.onrender.com/api/v1/task/fetch/daily-task";
   const PROFILE_API_URL = "https://exgeid-backend.onrender.com/api/v1/users/get/profile-info";
   const REFRESH_TOKEN_URL = "https://exgeid-backend.onrender.com/api/v1/refresh/token";
 
@@ -26,26 +27,48 @@ const Topbar = () => {
       }
 
       try {
-        const res = await fetch(PROFILE_API_URL, {
+        // First, fetch daily task data
+        console.log("Fetching daily task data...");
+        const taskRes = await fetch(DAILY_TASK_API_URL, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
-          //credentials: "include", // Include cookies if needed
         });
 
-        if (!res.ok) {
-          throw new Error(`Profile request failed: ${res.status}`);
+        if (!taskRes.ok) {
+          throw new Error(`Daily task request failed: ${taskRes.status}`);
         }
 
-        const data = await res.json();
-        console.log("profile data:", data);
+        const taskData = await taskRes.json();
+        console.log("Daily task data:", taskData);
+
+        // Then fetch profile data
+        console.log("Fetching profile data...");
+        const profileRes = await fetch(PROFILE_API_URL, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!profileRes.ok) {
+          throw new Error(`Profile request failed: ${profileRes.status}`);
+        }
+
+        const profileData = await profileRes.json();
+        console.log("Profile data:", profileData);
+        
         setUser({
-          name: data.personalDetails?.fullName || "User",
+          name: profileData.personalDetails?.fullName || "User",
           avatar: "https://randomuser.me/api/portraits/men/75.jpg",
         });
+
       } catch (err) {
+        console.error("Initial fetch failed:", err.message);
+        
         // Attempt to refresh token on failure
         try {
           console.log("Attempting to refresh token...");
@@ -54,7 +77,6 @@ const Topbar = () => {
             headers: {
               "Content-Type": "application/json",
             },
-            //credentials: "include", // Include cookies for refresh token
           });
 
           if (!refreshRes.ok) {
@@ -62,30 +84,49 @@ const Topbar = () => {
           }
 
           const refreshData = await refreshRes.json();
-          console.log("profile data:", refreshData);
+          console.log("Refresh data:", refreshData);
 
           const { accessToken: newAccessToken } = refreshData;
-          console.log("New Access Token:", newAccessToken); // Debug new token
+          console.log("New Access Token:", newAccessToken);
           sessionStorage.setItem("accessToken", newAccessToken);
 
-          // Retry the profile data fetch with new token
-          const retryRes = await fetch(PROFILE_API_URL, {
+          // Retry both requests with new token
+          console.log("Retrying daily task fetch with new token...");
+          const retryTaskRes = await fetch(DAILY_TASK_API_URL, {
+            method: "GET",
             headers: {
               Authorization: `Bearer ${newAccessToken}`,
               "Content-Type": "application/json",
             },
-            //credentials: "include",
           });
 
-          if (!retryRes.ok) {
-            throw new Error(`Retry request failed: ${retryRes.status}`);
+          if (!retryTaskRes.ok) {
+            console.warn("Daily task retry failed:", retryTaskRes.status);
+          } else {
+            const retryTaskData = await retryTaskRes.json();
+            console.log("Retry daily task data:", retryTaskData);
           }
 
-          const data = await retryRes.json();
+          // Retry profile fetch
+          console.log("Retrying profile fetch with new token...");
+          const retryProfileRes = await fetch(PROFILE_API_URL, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${newAccessToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!retryProfileRes.ok) {
+            throw new Error(`Retry profile request failed: ${retryProfileRes.status}`);
+          }
+
+          const profileData = await retryProfileRes.json();
           setUser({
-            name: data.personalDetails?.fullName || "User",
+            name: profileData.personalDetails?.fullName || "User",
             avatar: "https://randomuser.me/api/portraits/men/75.jpg",
           });
+
         } catch (refreshErr) {
           console.warn("⚠️ Backend not reachable, using mock profile data:", refreshErr.message);
           const data = mockProfileData;
