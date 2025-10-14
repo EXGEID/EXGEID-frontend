@@ -199,7 +199,7 @@ const Topbar = () => {
   const AvatarInitials = () => (
     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-[#FEC84D] flex items-center justify-center text-sm font-semibold flex-shrink-0 relative">
       {user.isLoading ? (
-        <div className="w-4 h-4 border-2 border-[#FEC84D] border-t-transparent rounded-full animate-spin"></div> // Updated spinner color to #FEC84D
+        <div className="w-4 h-4 border-2 border-[#1A202C] border-t-transparent rounded-full animate-spin"></div> // Updated spinner color to #FEC84D
       ) : (
         <span className="font-bold text-[#1A202C]">{getInitials(user.name)}</span>
       )}
@@ -225,7 +225,7 @@ const Topbar = () => {
         }}
       />
       
-      <div className="bg-[#06031E] flex justify-between items-center px-8 py-8 border-b border-[#343434] relative z-50">
+      <div className="bg-[#06031E] flex justify-between items-center px-8 py-4 md:py-8 md:pl-8 md:pr-16 border-b border-[#343434] fixed z-50">
         <button
           onClick={() => setIsOpen(true)}
           className="text-white text-xl md:hidden"
