@@ -102,7 +102,7 @@ const Topbar = () => {
         console.log("Profile data:", profileData);
         
         // Validate and set user data
-        const fullName = profileData.personalDetails?.fullName;
+        const fullName = profileData.data.personalDetails?.fullName;
         if (!fullName) {
           throw new Error("Invalid profile data: missing full name");
         }
