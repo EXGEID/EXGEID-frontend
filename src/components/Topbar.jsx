@@ -132,6 +132,7 @@ const Topbar = () => {
         console.log("Attempting to refresh token...");
         const refreshRes = await fetch(REFRESH_TOKEN_URL, {
           method: "GET",
+          credentials: "include", // Include cookies for refresh token sending/management
           headers: {
             "Content-Type": "application/json",
           },
