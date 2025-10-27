@@ -124,7 +124,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
       {/* Sidebar Drawer */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-[60%] md:w-64 bg-[#06031E] text-white lg:text-[16px] text-[12px] border-r border-[#343434]
+        className={`fixed top-0 left-0 h-[100%] w-[60%] md:w-64 bg-[#06031E] text-white lg:text-[16px] text-[12px] border-r border-[#343434]
         transform transition-transform duration-300 z-[60] flex flex-col 
         ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >

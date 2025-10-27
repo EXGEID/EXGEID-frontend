@@ -3,7 +3,7 @@ import { IoLogoFacebook, IoLogoWhatsapp, IoLogoInstagram, IoLogoTwitter, IoLogoS
 
 const Referrals = () => {
   return (
-    <div className="bg-[#020109] min-h-screen px-6 py-8 text-white">
+    <div className="bg-[#020109] min-h-screen md:px-6 py-8 text-white">
       {/* Header */}
       <div className="text-center">
         <div className="text-5xl">🎁</div>

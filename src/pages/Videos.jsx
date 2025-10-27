@@ -1,13 +1,19 @@
+import { useContext } from 'react';
 import { FaClock, FaWallet } from "react-icons/fa";
 import angelVid from "../assets/angelVid.png";
+import ModalContext from "../utils/ModalContext";
+import localVideoSrc from "../../../../EN609.mp4"
 
 const Videos = () => {
+  const { openModal } = useContext(ModalContext);
+  //const localVideoSrc = "../../../../EN609.mp4";
+
   const videoList = [
-    { platform: "YouTube", duration: "02:30sec", price: "₦1800.00" },
-    { platform: "TikTok", duration: "00:30sec", price: "₦1800.00" },
-    { platform: "YouTube", duration: "00:30sec", price: "₦1300.00" },
-    { platform: "TikTok", duration: "00:30sec", price: "₦1800.00" },
-    { platform: "YouTube", duration: "02:30sec", price: "₦1800.00" },
+    { platform: "YouTube", duration: "02:30sec", price: "₦1800.00", localVideoSrc: "C:/Users/HP/Desktop" },
+    { platform: "TikTok", duration: "00:30sec", price: "₦1800.00", localVideoSrc: "C:/Users/HP/Desktop" },
+    { platform: "YouTube", duration: "00:30sec", price: "₦1300.00", localVideoSrc: "C:/Users/HP/Desktop" },
+    { platform: "TikTok", duration: "00:30sec", price: "₦1800.00", localVideoSrc: "C:/Users/HP/Desktop" },
+    { platform: "YouTube", duration: "02:30sec", price: "₦1800.00", localVideoSrc: "C:/Users/HP/Desktop" },
   ];
 
   return (
@@ -27,12 +33,12 @@ const Videos = () => {
 
           <div className="flex justify-between items-center mt-2">
 			<div>
-				<p className="mt-4 text-gray-300 font-medium flex items-center gap-2">
+				<p className="mt-4 text-gray-300 font-medium flex items-center md:gap-2 md:w-auto w-[70%]">
 					Todays Earnings <FaWallet className="text-white-400" />
 				</p>
 				<span className="text-yellow-400 font-bold">₦ 4,499.00</span>
 			</div>
-            <button className="bg-[#8F0406] px-6 py-2 rounded-lg font-semibold">
+            <button className="bg-[#8F0406] md:px-6 md:py-2 px-3 py-1 rounded-lg text-sm font-semibold">
               View Total Earnings
             </button>
           </div>
@@ -76,7 +82,7 @@ const Videos = () => {
             </div>
 
             {/* Right - Button */}
-            <button className="bg-[#8F0406] px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 self-start md:self-auto">
+            <button onClick={() => openModal('watch-video', { localVideoSrc })} className="bg-[#8F0406] px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 self-start md:self-auto">
               Watch video ▶️
             </button>
           </div>

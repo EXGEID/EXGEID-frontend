@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import Logo from "../assets/landing-logo.png";
+import Logo from "../assets/logo2.png";
 import FadeInSection from "./FadeInSection";
 import { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";

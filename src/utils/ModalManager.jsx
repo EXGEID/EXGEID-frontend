@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import ModalContext from './ModalContext';
 import LoginModal from '../components/LoginForm';
 import SignupModal from '../components/SignUpForm';
 import ForgotPasswordModal from '../components/ForgotPassword';
 import PasswordEmailVerificationModal from '../components/PasswordEmailVerification';
 import ResetPasswordModal from '../components/ResetPassword';
 import TermsAndConditionsModal from '../components/TermsAndConditionsModal';
+import VideoPlayerModal from '../components/VideoPlayer';
 import WithdrawalRequirementsModal from '../components/WithdrawalRequirements';
 
 function ModalManager() {
@@ -94,7 +96,7 @@ function ModalManager() {
   console.log('Rendering - Visible modals:', visibleModals); // Debug
 
   return (
-    <>
+    <ModalContext.Provider value={{ openModal }}>
       <Outlet /> {/* Renders MainLayout and its nested routes */}
       {/*{modalStack.length > 0 && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-[999]" />
@@ -146,15 +148,15 @@ function ModalManager() {
                     onClose={closeTopModal}
                 />
             )}
-            {modal?.name === 'settings' && (
-                <SettingsModal
+            {modal?.name === 'watch-video' && (
+                <VideoPlayerModal
                     onClose={closeTopModal}
                     initialData={modal.data}
                 />
             )}
         </div>
       ))}
-    </>
+    </ModalContext.Provider>
   );
 }
 

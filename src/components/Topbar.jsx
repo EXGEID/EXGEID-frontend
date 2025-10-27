@@ -198,11 +198,11 @@ const Topbar = () => {
   }, []);
 
   const AvatarInitials = () => (
-    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-[#FEC84D] flex items-center justify-center text-sm font-semibold flex-shrink-0 relative">
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center text-sm font-semibold flex-shrink-0 relative">
       {user.isLoading ? (
         <div className="w-4 h-4 border-2 border-[#1A202C] border-t-transparent rounded-full animate-spin"></div> // Updated spinner color to #FEC84D
       ) : (
-        <span className="font-bold text-[#1A202C]">{getInitials(user.name)}</span>
+        <span className="font-bold text-[#ef4444]">{getInitials(user.name)}</span>
       )}
     </div>
   );

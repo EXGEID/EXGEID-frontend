@@ -18,7 +18,7 @@ const Withdrawals = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-6 bg-[#020109] text-white p-4 sm:p-6 md:p-8 min-h-screen">
+    <div className="space-y-6 bg-[#020109] text-white md:p-8 min-h-screen">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
