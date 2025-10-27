@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { FaClock, FaWallet } from "react-icons/fa";
 import angelVid from "../assets/angelVid.png";
 import ModalContext from "../utils/ModalContext";
-import localVideoSrc from "../../../../EN609.mp4"
+//import localVideoSrc from "../../../../EN609.mp4"
 
 const Videos = () => {
   const { openModal } = useContext(ModalContext);
