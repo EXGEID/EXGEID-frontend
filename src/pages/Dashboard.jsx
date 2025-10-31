@@ -697,8 +697,8 @@ const Dashboard = () => {
                   <div className="flex justify-between items-center text-[14px] lg:text-[17.5px] font-semibold w-full">
                     <h3 className="">Level {profileData?.accountDetails?.profileInfo?.level || 1} - In Progress</h3>
                     <div className="flex gap-2 items-center">
-                      <span>Day {profileData?.accountDetails?.profileInfo?.day || 0}/{profileData?.accountDetails?.profileInfo?.totalDay || 0}</span>
-                      <div className="w-5 h-5 rounded flex items-center justify-center">Clock</div>
+                      <span>Day {profileData?.accountDetails?.profileInfo?.day}/{profileData?.accountDetails?.profileInfo?.totalDay}</span>
+                      <div className="w-5 h-5 rounded flex items-center justify-center">⏳</div>
                     </div>
                   </div>
                 </div>
@@ -823,12 +823,12 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between h-25">
                   <div>
                     <div className="text-[12px] md:text-[16px] font-semibold">Days Streak</div>
-                    <div className="text-[15px] md:text-[19px] font-semibold text-yellow-400">{profileData?.accountDetails?.profileInfo?.day || 0} days Fire</div>
+                    <div className="text-[15px] md:text-[19px] font-semibold text-yellow-400">{profileData?.accountDetails?.profileInfo?.day} days 🔥</div>
                   </div>
                 </div>
                 <div className="items-center h-15">
                   <div className="text-[12px] md:text-[16px]">
-                    You've checked in for {profileData?.accountDetails?.profileInfo?.day || 0} days straight!
+                    You've checked in for {profileData?.accountDetails?.profileInfo?.day} days straight!
                   </div>
                   <div className="text-[12px] md:text-[16px]">Keep your streak going and keep earning!!!</div>
                 </div>

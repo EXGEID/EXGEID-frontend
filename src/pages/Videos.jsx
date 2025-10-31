@@ -163,7 +163,7 @@ const Videos = () => {
 
   // Calculate progress
   const watched = videoData?.watchedVideos || 0;
-  const total = videoData?.totalVideos || 1;
+  const total = videoData?.totalVideos || 0;
   const progressPercentage = total > 0 ? Math.min((watched / total) * 100, 100) : 0;
 
   if (loading) {

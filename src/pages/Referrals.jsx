@@ -302,7 +302,7 @@ const Referrals = () => {
       <div className="bg-[#020109] min-h-screen md:px-6 py-8 text-white">
         {/* Header */}
         <div className="text-center">
-          <div className="text-5xl">Gift</div>
+          <div className="text-5xl">🎁</div>
           <h2 className="text-2xl font-bold mt-2">Invite & Earn with Exgeid</h2>
           <p className="text-gray-400 text-sm max-w-2xl mx-auto mt-2">
             Hi <span className="text-yellow-400 font-medium">{userFullName}</span>! The more friends you invite, the faster you level up and the bigger
