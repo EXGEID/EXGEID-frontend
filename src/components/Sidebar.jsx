@@ -156,7 +156,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         </nav>
 
         <div 
-          className={`flex border-t md:pl-12 py-4 md:py-8 px-16 cursor-pointer transition-colors ${
+          className={`flex border-t border-[#343434] md:pl-12 py-4 md:py-8 px-16 cursor-pointer transition-colors ${
             isLoggingOut 
               ? "text-gray-500 cursor-not-allowed" 
               : "hover:text-red-500"

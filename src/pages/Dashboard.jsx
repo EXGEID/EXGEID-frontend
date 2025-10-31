@@ -27,49 +27,18 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
-  
+
+  // New states for subscribers
+  const [subscribers, setSubscribers] = useState([]);
+  const [subscribersLoading, setSubscribersLoading] = useState(true);
+  const [subscribersError, setSubscribersError] = useState(null);
+
   const DASHBOARD_API_URL = "https://exgeid-backend.onrender.com/api/v1/users/dashboard-info";
   const PROFILE_API_URL = "https://exgeid-backend.onrender.com/api/v1/users/get/profile-info";
   const REFRESH_TOKEN_URL = "https://exgeid-backend.onrender.com/api/v1/refresh/token";
+  const NEW_SUBSCRIBERS_API_URL = "https://exgeid-backend.onrender.com/api/v1/users/new-subscribers"; // New endpoint
 
-  const defaultDashboardData = {
-    userFullName: "User",
-    userProfileData: {
-      referredBy: "Unknown",
-      level: 1,
-      referralCode: undefined,
-    },
-    dailyTaskData: {
-      tasksTrack: {
-        completedTask: 0,
-        totalTask: 0,
-      },
-      completedTasks: {
-        watchedVideos: 0,
-        accountsSubscribed: 0,
-        referralCount: 0,
-      },
-      totalTasks: {
-        totalVideos: 0,
-        accountsToSubscribe: 0,
-      },
-    },
-    userWalletData: {
-      paidAmount: 0,
-    },
-  };
-
-  const defaultProfileData = {
-    accountDetails: {
-      profileInfo: {
-        day: 0,
-        totalDay: 0,
-        level: 1,
-      },
-    },
-  };
-
-  // === Toast Functions (Same as Topbar) ===
+  // === Toast Functions (Updated to match Videos page) ===
   const showSuccessToast = (message) => {
     toast.success(message, {
       position: "top-center",
@@ -137,6 +106,93 @@ const Dashboard = () => {
     }
   };
 
+  // === Fetch Subscribers with Retry Logic ===
+  const fetchSubscribers = async (accessToken) => {
+    setSubscribersLoading(true);
+    setSubscribersError(null);
+
+    try {
+      const res = await fetch(NEW_SUBSCRIBERS_API_URL, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Subscribers request failed: ${res.status} - ${errorText}`);
+      }
+
+      const response = await res.json();
+      const data = response.data || response;
+
+      // Ensure data is array and has correct shape
+      if (Array.isArray(data)) {
+        setSubscribers(data);
+      } else {
+        setSubscribers([]);
+        console.warn("Subscribers data is not an array:", data);
+      }
+
+    } catch (err) {
+      console.error("Subscribers fetch error:", err);
+
+      // Attempt token refresh
+      try {
+        const refreshRes = await fetch(REFRESH_TOKEN_URL, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
+
+        if (!refreshRes.ok) {
+          throw new Error(`Token refresh failed: ${refreshRes.status}`);
+        }
+
+        const refreshResponse = await refreshRes.json();
+        const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.accessToken;
+
+        if (newAccessToken) {
+          sessionStorage.setItem("accessToken", newAccessToken);
+
+          // Retry with new token
+          const retryRes = await fetch(NEW_SUBSCRIBERS_API_URL, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${newAccessToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!retryRes.ok) {
+            throw new Error(`Retry subscribers failed: ${retryRes.status}`);
+          }
+
+          const retryResponse = await retryRes.json();
+          const retryData = retryResponse.data || retryResponse;
+
+          if (Array.isArray(retryData)) {
+            setSubscribers(retryData);
+          } else {
+            setSubscribers([]);
+          }
+
+          showSuccessToast("Subscribers reloaded after session refresh.");
+        } else {
+          throw new Error("No new access token");
+        }
+      } catch (refreshErr) {
+        setSubscribersError("Failed to load new subscribers.");
+        showErrorToast("Could not load subscribers. Please try again later.");
+        setSubscribers([]);
+      }
+    } finally {
+      setSubscribersLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -146,8 +202,7 @@ const Dashboard = () => {
 
       if (!accessToken) {
         showErrorToast("Authentication required. Please log in.");
-        setDashboardData(defaultDashboardData);
-        setProfileData(defaultProfileData);
+        setError("Please login to view dashboard.");
         setLoading(false);
         return;
       }
@@ -188,7 +243,9 @@ const Dashboard = () => {
         const prof = profResponse.data || profResponse;
         setProfileData(prof);
 
-        // Success: All data loaded
+        // Now fetch subscribers
+        await fetchSubscribers(accessToken);
+
         showSuccessToast("Dashboard loaded successfully!");
 
       } catch (err) {
@@ -247,23 +304,29 @@ const Dashboard = () => {
             const retryProf = retryProfResponse.data || retryProfResponse;
             setProfileData(retryProf);
 
+            // Retry subscribers
+            await fetchSubscribers(newAccessToken);
+
             showSuccessToast("Data reloaded successfully!");
 
           } else {
             throw new Error("No new access token received");
           }
         } catch (refreshErr) {
-          showErrorToast("Backend unavailable. Using default data.");
-          setError("Backend temporarily unavailable. Using default data.");
-          setDashboardData(defaultDashboardData);
-          setProfileData(defaultProfileData);
+          setError("Failed to load dashboard. Please try again later.");
+          showErrorToast("Could not load dashboard. Please try again.");
+          setDashboardData(null);
+          setProfileData(null);
+          setSubscribersLoading(false);
+          setSubscribers([]);
+          setSubscribersError("Failed to load subscribers.");
         }
       } finally {
         setLoading(false);
       }
     };
 
-    setTimeout(() => fetchData(), 5000);
+    setTimeout(() => fetchData(), 2000);
   }, []);
 
   // Calculate progress data for pie chart
@@ -293,13 +356,151 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="bg-[#020109] min-h-screen flex items-center justify-center">
-        <div className="text-white">Loading dashboard...</div>
-      </div>
+      <>
+        <Toaster 
+          position="top-center"
+          containerStyle={{
+            zIndex: 9999,
+            top: '20px',
+          }}
+          toastOptions={{
+            style: {
+              background: "#09052C",
+              color: "#CACACA",
+              zIndex: 9999,
+            },
+            duration: 5000,
+          }}
+        />
+        <div className="bg-[#020109] min-h-screen">
+          <div className="md:p-6 space-y-8 text-[#CACACA]">
+            {/* Greeting Skeleton */}
+            <div className="h-12 bg-gradient-to-r from-[#0E083C] to-[#06031E] rounded-lg animate-pulse"></div>
+
+            {/* Section 1 Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-gradient-to-br from-[#0E083C] to-[#06031E] rounded-2xl p-8 space-y-6 animate-pulse">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gray-700 rounded-full"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-700 rounded w-32"></div>
+                    <div className="h-3 bg-gray-700 rounded w-40"></div>
+                  </div>
+                </div>
+                <div className="h-3 bg-gray-700 rounded w-full"></div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-700 rounded w-24"></div>
+                  <div className="h-4 bg-gray-700 rounded w-20"></div>
+                  <div className="h-4 bg-gray-700 rounded w-28"></div>
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-[#0E083C] to-[#06031E] rounded-2xl p-8 animate-pulse">
+                <div className="h-8 bg-gray-700 rounded w-32 mb-4"></div>
+                <div className="h-6 bg-gray-700 rounded w-24"></div>
+                <div className="border-t border-gray-700 my-4"></div>
+                <div className="grid grid-cols-2 gap-4">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 bg-gray-700 rounded w-20"></div>
+                      <div className="h-4 bg-gray-700 rounded w-16"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2 Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6">
+              <div className="bg-gradient-to-br from-[#0E083C] to-[#06031E] rounded-2xl p-8 space-y-6 animate-pulse">
+                <div className="h-6 bg-gray-700 rounded w-40"></div>
+                <div className="h-4 bg-gray-700 rounded w-full"></div>
+                <div className="space-y-3">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="h-5 bg-gray-700 rounded w-32"></div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div className="bg-gradient-to-br from-[#0E083C] to-[#06031E] rounded-2xl p-8 h-60 animate-pulse">
+                  <div className="grid grid-cols-2 gap-8 h-full">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-32 h-32 bg-gray-700 rounded-full"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-5 bg-gray-700 rounded w-24"></div>
+                      <div className="h-4 bg-gray-700 rounded w-32"></div>
+                      <div className="h-4 bg-gray-700 rounded w-28"></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-[#0E083C] to-[#06031E] rounded-2xl p-8 animate-pulse">
+                  <div className="h-6 bg-gray-700 rounded w-32 mb-2"></div>
+                  <div className="h-5 bg-gray-700 rounded w-20"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3 Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6">
+              <div className="bg-gradient-to-br from-[#0E083C] to-[#06031E] rounded-2xl p-8 space-y-6 animate-pulse">
+                <div className="h-6 bg-gray-700 rounded w-40"></div>
+                <div className="h-4 bg-gray-700 rounded w-full"></div>
+                <div className="h-10 bg-gray-700 rounded w-48"></div>
+                <div className="grid grid-cols-5 gap-4">
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className="w-12 h-12 bg-gray-700 rounded"></div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-[#0E083C] to-[#06031E] rounded-2xl p-8 animate-pulse">
+                <div className="h-6 bg-gray-700 rounded w-32 mb-4"></div>
+                <div className="space-y-4">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
+                        <div className="h-4 bg-gray-700 rounded w-24"></div>
+                      </div>
+                      <div className="h-4 bg-gray-700 rounded w-16"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 
-  const dataSource = dashboardData || defaultDashboardData;
+  if (error) {
+    return (
+      <>
+        <Toaster 
+          position="top-center"
+          containerStyle={{
+            zIndex: 9999,
+            top: '20px',
+          }}
+          toastOptions={{
+            style: {
+              background: "#09052C",
+              color: "#CACACA",
+              zIndex: 9999,
+            },
+            duration: 5000,
+          }}
+        />
+        <div className="bg-[#020109] min-h-screen flex items-center justify-center p-6">
+          <div className="bg-gradient-to-r from-[#06031E] to-[#0E083C] rounded-xl p-8 text-center max-w-md">
+            <p className="text-red-500 font-medium">{error || "No dashboard data available."}</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const dataSource = dashboardData;
 
   return (
     <>
@@ -379,11 +580,11 @@ const Dashboard = () => {
                   </div>
                   <div className="flex items-center justify-between mt-4 text-[11px] lg:text-[15px] text-gray-400">
                     <div className="flex items-center gap-1">
-                      <span>Level 1</span>
+                      <span>Level {profileData?.accountDetails?.profileInfo?.level || 1}</span>
                       <img src={badge} className="w-4 h-4 rounded-sm" />
                     </div>
                     <div className="flex items-center gap-1">
-                      <span>Level 2</span>
+                      <span>Level {profileData?.accountDetails?.profileInfo?.level != 10 ? profileData?.accountDetails?.profileInfo?.level + 1 || 2: profileData?.accountDetails?.profileInfo?.level}</span>
                       <img src={badge} className="w-4 h-4 rounded-sm" />
                     </div>
                   </div>
@@ -391,7 +592,7 @@ const Dashboard = () => {
 
                 <div className="mt-8 text-center">
                   <p className="text-[14px] lg:text-[17.5px] font-medium">
-                    You are currently on Level {profileData?.accountDetails?.profileInfo?.level || 1} with {profileData?.accountDetails?.profileInfo?.day || 0} points
+                    You are currently on Level {profileData?.accountDetails?.profileInfo?.level || 1} with {profileData?.pointsData?.totalLevelPoint || 0} points
                   </p>
                 </div>
 
@@ -497,7 +698,7 @@ const Dashboard = () => {
                     <h3 className="">Level {profileData?.accountDetails?.profileInfo?.level || 1} - In Progress</h3>
                     <div className="flex gap-2 items-center">
                       <span>Day {profileData?.accountDetails?.profileInfo?.day || 0}/{profileData?.accountDetails?.profileInfo?.totalDay || 0}</span>
-                      <div className="w-5 h-5 rounded flex items-center justify-center">⏳</div>
+                      <div className="w-5 h-5 rounded flex items-center justify-center">Clock</div>
                     </div>
                   </div>
                 </div>
@@ -622,7 +823,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between h-25">
                   <div>
                     <div className="text-[12px] md:text-[16px] font-semibold">Days Streak</div>
-                    <div className="text-[15px] md:text-[19px] font-semibold text-yellow-400">{profileData?.accountDetails?.profileInfo?.day || 0} days 🔥</div>
+                    <div className="text-[15px] md:text-[19px] font-semibold text-yellow-400">{profileData?.accountDetails?.profileInfo?.day || 0} days Fire</div>
                   </div>
                 </div>
                 <div className="items-center h-15">
@@ -680,33 +881,37 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Subscribers */}
+            {/* Subscribers - NOW DYNAMIC */}
             <div className="relative bg-gradient-to-br from-[#0E083C] to-[#06031E] rounded-2xl md:p-15 p-8 overflow-y-auto">
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <img src={angel2} alt="angel" className="max-w-xs object-contain" />
               </div>
               <div className="relative z-10">
                 <h3 className="text-[14px] md:text-[24px] text-[#CACACA] font-semibold">New Subscribers</h3>
-                <ul className="space-y-8 mt-8">
-                  {[
-                    { name: "John Doe", amount: "₦12,000.00", initials: "JD" },
-                    { name: "Jane Smith", amount: "₦12,000.00", initials: "JS" },
-                    { name: "Mike Johnson", amount: "₦12,000.00", initials: "MJ" },
-                    { name: "Sarah Wilson", amount: "₦12,000.00", initials: "SW" },
-                  ].map((t, idx) => (
-                    <li key={idx} className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-200 to-red-300 flex items-center justify-center font-bold text-[#ef4444] font-bold text-sm overflow-hidden">
-                          {t.initials}
+
+                {subscribersLoading ? (
+                  <p className="mt-8 text-center text-gray-400 text-sm">Loading subscribers...</p>
+                ) : subscribersError ? (
+                  <p className="mt-8 text-center text-red-500 text-sm font-medium">{subscribersError}</p>
+                ) : subscribers.length === 0 ? (
+                  <p className="mt-8 text-center text-gray-500 text-sm">No new subscribers yet.</p>
+                ) : (
+                  <ul className="space-y-8 mt-8">
+                    {subscribers.map((sub, idx) => (
+                      <li key={idx} className="flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-200 to-red-300 flex items-center justify-center font-bold text-[#ef4444] text-sm overflow-hidden">
+                            {getInitials(sub.fullName)}
+                          </div>
+                          <span className="font-medium text-[12px] md:text-[14px]">{sub.fullName}</span>
                         </div>
-                        <span className="font-medium text-[12px] md:text-[14px]">{t.name}</span>
-                      </div>
-                      <div className="text-yellow-400 font-semibold text-[12px] md:text-[14px]">
-                        {t.amount}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                        <div className="text-yellow-400 font-semibold text-[12px] md:text-[14px]">
+                          ₦{Number(sub.amount).toLocaleString()}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           </div>

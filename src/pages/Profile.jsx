@@ -18,30 +18,6 @@ const Profile = () => {
   const LOGOUT_API_URL = "https://exgeid-backend.onrender.com/api/v1/auth/logout";
   const REFRESH_TOKEN_URL = "https://exgeid-backend.onrender.com/api/v1/refresh/token";
 
-  const defaultProfile = {
-    personalDetails: {
-      fullName: "User",
-      gender: "",
-      phoneNumber: "",
-      profession: "",
-      age: "",
-      email: "N/A",
-    },
-    accountDetails: {
-      profileInfo: {
-        level: 1,
-        referredBy: "Unknown",
-        day: 0,
-        totalDay: 0,
-      },
-      dailyTaskInfo: {
-        watchedVideos: 0,
-        referralCount: 0,
-        accountsSubscribed: 0,
-      },
-    },
-  };
-
   // Generate initials from full name
   const getInitials = (fullName) => {
     if (!fullName) return "U";
@@ -50,48 +26,38 @@ const Profile = () => {
     return initials.length > 2 ? initials.substring(0, 2) : initials;
   };
 
-  // Toast utility functions
+  // Toast utility functions (Updated to match Dashboard)
   const showSuccessToast = (message) => {
     toast.success(message, {
-      id: `success-${Date.now()}`,
-      duration: 3000,
       position: "top-center",
       style: {
         background: "#09052C",
         color: "#CACACA",
         border: "1px solid #FEC84D",
-        borderRadius: "8px",
-        fontSize: "14px",
-        padding: "12px 16px",
-        boxShadow: "0 4px 12px rgba(198, 5, 8, 0.15)",
         zIndex: 9999,
       },
       iconTheme: {
         primary: "#FEC84D",
         secondary: "#09052C",
       },
+      duration: 3000,
     });
   };
 
   const showErrorToast = (message) => {
     toast.error(message, {
-      id: `error-${Date.now()}`,
-      duration: 5000,
       position: "top-center",
       style: {
-        background: "#0E083C",
+        background: "#09052C",
         color: "#CACACA",
-        border: "1px solid #C60508",
-        borderRadius: "8px",
-        fontSize: "14px",
-        padding: "12px 16px",
-        boxShadow: "0 4px 12px rgba(198, 5, 8, 0.15)",
+        border: "1px solid #ef4444",
         zIndex: 9999,
       },
       iconTheme: {
-        primary: "#C60508",
-        secondary: "#CACACA",
+        primary: "#ef4444",
+        secondary: "#09052C",
       },
+      duration: 5000,
     });
   };
 
@@ -176,9 +142,9 @@ const Profile = () => {
       const accessToken = sessionStorage.getItem("accessToken");
       
       if (!accessToken) {
-        setProfile(defaultProfile);
+        setError("Please login to view profile.");
+        showErrorToast("Authentication required. Please log in.");
         setLoading(false);
-        showErrorToast("No authentication token. Using default data.");
         return;
       }
 
@@ -197,8 +163,9 @@ const Profile = () => {
         });
         showSuccessToast("Profile loaded successfully!");
       } catch (err) {
-        setProfile(defaultProfile);
-        showErrorToast("Failed to load profile. Using default data.");
+        setError("Failed to load profile. Please try again later.");
+        showErrorToast("Could not load profile. Please try again.");
+        setProfile(null);
       } finally {
         setLoading(false);
       }
@@ -309,16 +276,126 @@ const Profile = () => {
     }
   };
 
+  // Loading Skeleton (Matching exact layout, height, width)
   if (loading) {
     return (
-      <div className="flex-1 bg-[#020109] flex items-center justify-center min-h-screen">
-        <div className="text-white text-lg">Loading profile...</div>
-      </div>
+      <>
+        <Toaster 
+          position="top-center"
+          containerStyle={{
+            zIndex: 9999,
+            top: '20px',
+          }}
+          toastOptions={{
+            style: {
+              background: "#09052C",
+              color: "#CACACA",
+              zIndex: 9999,
+            },
+            duration: 5000,
+          }}
+        />
+        <div className="flex-1 bg-[#020109] min-h-screen md:px-6 py-8">
+          {/* Title Skeleton */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-20 h-20 bg-gradient-to-r from-[#0E083C] to-[#06031E] rounded-full animate-pulse"></div>
+            <div className="h-8 bg-gradient-to-r from-[#0E083C] to-[#06031E] rounded w-32 animate-pulse"></div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* RIGHT SIDE - Profile Card Skeleton */}
+            <div className="order-1 lg:order-2 bg-gradient-to-b from-[#0E083C] to-[#06031E] p-6 md:p-8 rounded-2xl animate-pulse">
+              <div className="md:w-64 md:h-64 w-32 h-32 rounded-full bg-gray-700 mx-auto"></div>
+              <div className="h-6 bg-gray-700 rounded w-48 mx-auto mt-4"></div>
+              <div className="h-8 bg-gray-700 rounded w-32 mx-auto mt-2"></div>
+              <div className="h-10 bg-gray-700 rounded w-full max-w-md mx-auto mt-4"></div>
+              <div className="bg-[#020109] p-4 rounded-xl w-full mt-2 space-y-3">
+                <div className="h-6 bg-gray-700 rounded w-40 mx-auto"></div>
+                {[1,2,3,4,5,6].map(i => (
+                  <div key={i} className="h-4 bg-gray-700 rounded w-full"></div>
+                ))}
+              </div>
+            </div>
+
+            {/* LEFT SIDE Skeleton */}
+            <div className="order-2 lg:order-1 lg:col-span-2 flex flex-col gap-6">
+              {/* Personal Details Form Skeleton */}
+              <div className="bg-gradient-to-b from-[#0E083C] to-[#06031E] p-6 md:p-8 rounded-2xl animate-pulse">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="h-6 bg-gray-700 rounded w-32"></div>
+                  <div className="h-8 bg-gray-700 rounded w-20"></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1,2,3,4,5,6].map(i => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 bg-gray-700 rounded w-24"></div>
+                      <div className="h-10 bg-gray-700 rounded"></div>
+                    </div>
+                  ))}
+                </div>
+                <div className="h-12 bg-gray-700 rounded w-48 mt-6"></div>
+              </div>
+
+              {/* Account Status Skeleton */}
+              <div className="bg-gradient-to-b from-[#0E083C] to-[#06031E] p-6 md:p-8 rounded-2xl animate-pulse">
+                <div className="h-6 bg-gray-700 rounded w-32 mb-4"></div>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
+                  <div className="space-y-1">
+                    <div className="h-4 bg-gray-700 rounded w-32"></div>
+                    <div className="h-3 bg-gray-700 rounded w-40"></div>
+                  </div>
+                </div>
+                <div className="h-5 bg-gray-700 rounded w-64 mx-auto mb-3"></div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex-1 bg-gray-700 h-2 rounded-full"></div>
+                  <div className="h-4 bg-gray-700 rounded w-12"></div>
+                </div>
+                <div className="grid md:grid-cols-4 grid-cols-2 gap-4">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="space-y-1">
+                      <div className="h-4 bg-gray-700 rounded w-20"></div>
+                      <div className="h-6 bg-gray-700 rounded w-8"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 
-  const dataSource = profile || defaultProfile;
-  const { personalDetails, accountDetails } = dataSource;
+  // Error State (Matching Dashboard)
+  if (loading === false && !profile) {
+    return (
+      <>
+        <Toaster 
+          position="top-center"
+          containerStyle={{
+            zIndex: 9999,
+            top: '20px',
+          }}
+          toastOptions={{
+            style: {
+              background: "#09052C",
+              color: "#CACACA",
+              zIndex: 9999,
+            },
+            duration: 5000,
+          }}
+        />
+        <div className="flex-1 bg-[#020109] min-h-screen flex items-center justify-center p-6">
+          <div className="bg-gradient-to-r from-[#06031E] to-[#0E083C] rounded-xl p-8 text-center max-w-md">
+            <p className="text-red-500 font-medium">Failed to load profile. Please try again later.</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const { personalDetails, accountDetails, pointsData } = profile;
 
   return (
     <>
@@ -579,7 +656,7 @@ const Profile = () => {
                 <div>
                   <p className="text-sm text-gray-400">Number of Points Gained</p>
                   <p className="font-bold text-lg mt-1 text-white">
-                    {accountDetails?.dailyTaskInfo?.accountsSubscribed + accountDetails?.dailyTaskInfo?.referralCount + accountDetails?.dailyTaskInfo?.watchedVideos || 0}
+                    {pointsData.totalLevelPoint || 0}
                   </p>
                 </div>
               </div>
@@ -617,13 +694,13 @@ const Profile = () => {
           },
           error: {
             style: {
-              background: "#0E083C",
+              background: "#09052C",
               color: "#CACACA",
-              border: "1px solid #C60508",
+              border: "1px solid #ef4444",
             },
             iconTheme: {
-              primary: "#C60508",
-              secondary: "#CACACA",
+              primary: "#ef4444",
+              secondary: "#09052C",
             },
           },
         }}
