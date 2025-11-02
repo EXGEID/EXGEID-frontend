@@ -187,12 +187,12 @@ const Referrals = () => {
             duration: 5000,
           }}
         />
-        <div className="bg-[#020109] min-h-screen md:px-6 py-8">
+        <div className="bg-[#020109] min-h-screen md:px-6 py-8 mx-auto">
           {/* Header Skeleton */}
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-gradient-to-r from-[#0E083C] to-[#06031E] rounded-full mx-auto animate-pulse"></div>
-            <div className="h-8 bg-gradient-to-r from-[#0E083C] to-[#06031E] rounded w-64 mx-auto animate-pulse"></div>
-            <div className="h-5 bg-gradient-to-r from-[#0E083C] to-[#06031E] rounded w-96 mx-auto animate-pulse"></div>
+            <div className="h-8 bg-gradient-to-r from-[#0E083C] to-[#06031E] rounded w-52 mx-auto animate-pulse"></div>
+            <div className="h-5 bg-gradient-to-r from-[#0E083C] to-[#06031E] rounded w-68 md:w-96 mx-auto animate-pulse"></div>
           </div>
 
           {/* Level Steps Skeleton */}

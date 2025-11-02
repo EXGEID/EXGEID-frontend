@@ -399,6 +399,21 @@ const Profile = () => {
 
   return (
     <>
+    <Toaster 
+        position="top-center"
+        containerStyle={{
+          zIndex: 9999,
+          top: '20px',
+        }}
+        toastOptions={{
+          style: {
+            background: "#09052C",
+            color: "#CACACA",
+            zIndex: 9999,
+          },
+          duration: 5000,
+        }} 
+      />
       <div className="flex-1 bg-[#020109] text-[#CACACA] min-h-screen relative">
         {/* Title */}
         <div className="flex items-center gap-3 mb-6">
@@ -425,7 +440,7 @@ const Profile = () => {
 
             <button 
               onClick={handleLogout} 
-              className="mt-6 bg-[#8F0406] hover:bg-red-700 w-full max-w-md mx-auto py-3 rounded-lg font-medium transition-colors text-white"
+              className="mt-6 bg-[#8F0406] hover:bg-red-700 hover:scale-105 w-full max-w-md mx-auto py-3 rounded-lg font-medium transition-colors text-white"
             >
               Log out
             </button>
@@ -664,47 +679,6 @@ const Profile = () => {
           </div>
         </div>
       </div>
-
-      <Toaster 
-        position="top-center"
-        containerStyle={{
-          top: 20,
-          zIndex: 9999,
-        }}
-        toastOptions={{
-          duration: 5000,
-          style: {
-            background: "#09052C",
-            color: "#CACACA",
-            borderRadius: "8px",
-            padding: "12px 16px",
-            fontSize: "14px",
-            boxShadow: "0 4px 12px rgba(198, 5, 8, 0.15)",
-          },
-          success: {
-            style: {
-              background: "#09052C",
-              color: "#CACACA",
-              border: "1px solid #FEC84D",
-            },
-            iconTheme: {
-              primary: "#FEC84D",
-              secondary: "#09052C",
-            },
-          },
-          error: {
-            style: {
-              background: "#09052C",
-              color: "#CACACA",
-              border: "1px solid #ef4444",
-            },
-            iconTheme: {
-              primary: "#ef4444",
-              secondary: "#09052C",
-            },
-          },
-        }}
-      />
     </>
   );
 };

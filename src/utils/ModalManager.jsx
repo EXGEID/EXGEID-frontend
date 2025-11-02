@@ -8,6 +8,7 @@ import PasswordEmailVerificationModal from '../components/PasswordEmailVerificat
 import ResetPasswordModal from '../components/ResetPassword';
 import TermsAndConditionsModal from '../components/TermsAndConditionsModal';
 import VideoPlayerModal from '../components/VideoPlayer';
+import TaskPrerequisitesModal from '../components/TaskPrerequisites';
 import WithdrawalRequirementsModal from '../components/WithdrawalRequirements';
 
 function ModalManager() {
@@ -152,6 +153,11 @@ function ModalManager() {
                 <VideoPlayerModal
                     onClose={closeTopModal}
                     initialData={modal.data}
+                />
+            )}
+            {modal?.name === 'task-prerequisites' && (
+                <TaskPrerequisitesModal
+                    onClose={closeTopModal}
                 />
             )}
         </div>

@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
 import { BsCheckSquare, BsCheckSquareFill } from 'react-icons/bs';
 import { FaClock } from "react-icons/fa";
-//import YouTube from 'react-youtube';
+import YouTube from 'react-youtube'; // ← Now imported
+import { Toaster, toast } from "react-hot-toast";
 
 // Simple encryption (base64 + char shift)
 const encrypt = (data) => {
@@ -28,7 +29,7 @@ const decrypt = (data) => {
   }
 };
 
-const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => {
+const VideoPlayerModal = ({ initialData, onClose }) => {
   const [isAnimated, setIsAnimated] = useState(false);
   useEffect(() => setIsAnimated(true), []);
 
@@ -41,8 +42,7 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
   const [duration, setDuration] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [title, setTitle] = useState(
-    initialData?.title ||
-      (initialData?.localVideoSrc ? 'Local Video Title' : 'Loading title...')
+    initialData?.video?.title || 'Loading title...'
   );
   const [views, setViews] = useState(0);
   const [likes, setLikes] = useState(0);
@@ -71,7 +71,7 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
 
   // Control Overlay Refs
   const [showControls, setShowControls] = useState(false);
-  const [controlsTimeout, setControlsTimeout] = useState(null);
+  const controlsTimeoutRef = useRef(null);
   const videoContainerRef = useRef(null);
   const isHoveringRef = useRef(false);
   const lastInteractionRef = useRef(Date.now());
@@ -80,7 +80,217 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
   const [popup, setPopup] = useState({ show: false, type: 'rewind', count: 0, x: 0, y: 0, key: 0 });
   const popupTimeoutRef = useRef(null);
 
-  const STORAGE_KEY = `video-progress-${initialData?.videoId || 'local'}`;
+  // Add new state
+  const [isLiking, setIsLiking] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+
+    // API endpoint
+  const LIKE_API_URL = `https://exgeid-backend.onrender.com/api/v1/task/like/${initialData?.video?.videoId}`;
+  const REFRESH_TOKEN_URL = "https://exgeid-backend.onrender.com/api/v1/refresh/token";
+  const VERIFY_VIDEO_URL = "https://exgeid-backend.onrender.com/api/v1/task/verify/video";
+
+    // Toast Functions (same styling as Videos component)
+  const showSuccessToast = (message) => {
+    toast.success(message, {
+        position: "top-center",
+        style: {
+        background: "#09052C",
+        color: "#CACACA",
+        border: "1px solid #FEC84D",
+        zIndex: 9999,
+        },
+        iconTheme: {
+        primary: "#FEC84D",
+        secondary: "#09052C",
+        },
+        duration: 3000,
+    });
+  };
+
+  const showErrorToast = (message) => {
+    toast.error(message, {
+        position: "top-center",
+        style: {
+        background: "#09052C",
+        color: "#CACACA",
+        border: "1px solid #ef4444",
+        zIndex: 9999,
+        },
+        iconTheme: {
+        primary: "#ef4444",
+        secondary: "#09052C",
+        },
+        duration: 5000,
+    });
+  };
+
+  // Like video handler
+  const handleLikeVideo = async () => {
+    const accessToken = sessionStorage.getItem("accessToken");
+    if (!accessToken) {
+        showErrorToast("Authentication required. Please log in.");
+        return;
+    }
+
+    setIsLiking(true);
+    try {
+        const res = await fetch(LIKE_API_URL, {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+        },
+        });
+
+        if (!res.ok) {
+        if (res.status === 401) {
+            // Attempt token refresh
+            try {
+            const refreshRes = await fetch(REFRESH_TOKEN_URL, {
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+            });
+
+            if (!refreshRes.ok) {
+                throw new Error(`Token refresh failed: ${refreshRes.status}`);
+            }
+
+            const refreshResponse = await refreshRes.json();
+            const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.accessToken;
+
+            if (newAccessToken) {
+                sessionStorage.setItem("accessToken", newAccessToken);
+
+                // Retry like request
+                const retryRes = await fetch(LIKE_API_URL, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${newAccessToken}`,
+                    "Content-Type": "application/json",
+                },
+                });
+
+                if (!retryRes.ok) {
+                throw new Error(`Retry like failed: ${retryRes.status}`);
+                }
+
+                setLiked(true);
+                setLikes(prev => prev + 1);
+                showSuccessToast("Video liked successfully!");
+            } else {
+                throw new Error("No new access token");
+            }
+            } catch (refreshErr) {
+            showErrorToast("Session expired. Please log in again.");
+            }
+        } else {
+            const errorText = await res.text();
+            throw new Error(`Like request failed: ${res.status} - ${errorText}`);
+        }
+        } else {
+        setLiked(true);
+        setLikes(prev => prev + 1);
+        showSuccessToast("Video liked successfully!");
+        }
+    } catch (err) {
+        console.error("Like error:", err);
+        showErrorToast("Failed to like video. Please try again.");
+    } finally {
+        setIsLiking(false);
+    }
+  };
+
+  // New handleMarkComplete function
+  const handleMarkComplete = async () => {
+    if (isMarkedComplete || isCompleting) return;
+
+    const accessToken = sessionStorage.getItem("accessToken");
+    if (!accessToken) {
+      showErrorToast("Authentication required. Please log in.");
+      return;
+    }
+
+    setIsCompleting(true);
+
+    const requestBody = {
+      videoId: initialData?.video?.videoId,
+      videoType: initialData?.video?.videoType || "youtube",
+      videoDuration: duration, // Already in seconds from parseDuration
+      completed: isCompleted,
+    };
+
+    const maxRetries = 3;
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
+      try {
+        const res = await fetch(VERIFY_VIDEO_URL, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!res.ok) {
+          if (res.status === 401 && attempt < maxRetries - 1) {
+            // Attempt token refresh
+            try {
+              const refreshRes = await fetch(REFRESH_TOKEN_URL, {
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+              });
+
+              if (!refreshRes.ok) {
+                throw new Error(`Token refresh failed: ${refreshRes.status}`);
+              }
+
+              const refreshResponse = await refreshRes.json();
+              const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.accessToken;
+
+              if (newAccessToken) {
+                sessionStorage.setItem("accessToken", newAccessToken);
+                attempt++;
+                continue; // Retry with new token
+              } else {
+                throw new Error("No new access token");
+              }
+            } catch (refreshErr) {
+              console.error("Token refresh error:", refreshErr);
+              showErrorToast("Session expired. Please log in again.");
+              break;
+            }
+          } else {
+            const errorText = await res.text();
+            throw new Error(`Verify video failed: ${res.status} - ${errorText}`);
+          }
+        }
+
+        // Success
+        setIsMarkedComplete(true);
+        showSuccessToast("Video marked as complete!");
+        break; // Exit retry loop
+
+      } catch (err) {
+        console.error("Verify video error:", err);
+        if (attempt === maxRetries - 1) {
+          showErrorToast("Failed to mark video as complete. Please try again.");
+        }
+        attempt++;
+        if (attempt < maxRetries) {
+          // Exponential backoff: wait 1s, 2s, 4s
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+      }
+    }
+
+    setIsCompleting(false);
+  };
+
+  const STORAGE_KEY = `video-progress-${initialData?.video?.videoId}`;
 
   // === [3] HELPER: AGGRESSIVELY HIDE PROGRESS BAR ===
   const hideProgress = (el) => {
@@ -93,6 +303,25 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
       height: 0 !important;
       overflow: hidden !important;
     `;
+  };
+
+  // New helper to hide specific popups and buttons
+  const hidePopups = (doc) => {
+    if (!doc) return;
+    const elementsToHide = [
+      '.ytp-popup', // General popup container
+      '.ytd-watch-later-button', // Watch Later button
+      '.ytd-share-button', // Share button
+      '.ytp-share-button', // Share popup trigger
+      '.ytp-watch-later-button', // Watch Later popup trigger
+      '.ytp-related-video-renderer', // More videos/related content
+      '.ytp-chrome-top .ytp-button[aria-label*="Share"]', // Share in top bar
+      '.ytp-chrome-top .ytp-button[aria-label*="Watch later"]', // Watch Later in top bar
+    ];
+    elementsToHide.forEach(selector => {
+      const els = doc.querySelectorAll(selector);
+      els.forEach(el => hideProgress(el));
+    });
   };
 
   // Pop up Helpers
@@ -140,16 +369,17 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
 
   //reset timer helper
   const resetHideTimer = () => {
-    if (controlsTimeout) clearTimeout(controlsTimeout);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
 
-    const id = setTimeout(() => {
-        // Only hide if no recent interaction and not hovering after 2s
-        if (Date.now() - lastInteractionRef.current >= 3000 && !isHoveringRef.current) {
+    setShowControls(true); // Show controls on interaction
+    controlsTimeoutRef.current = setTimeout(() => {
+      // Hide controls if not paused
+      if (!isPaused) {
         setShowControls(false);
-        }
-    }, 2000);
-
-    setControlsTimeout(id);
+      }
+    }, 2000); // 2 seconds
   };
 
   // 1. LOAD SAVED PROGRESS
@@ -167,7 +397,7 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
     }
     initialMaxRef.current = loadedMax;
     absoluteMaxWatchedRef.current = loadedMax; // ← Initialize absolute max
-  }, [initialData?.videoId, initialData?.localVideoSrc]);
+  }, [initialData?.video?.videoId]);
 
   // 2. SAVE PROGRESS (every 5s)
   useEffect(() => {
@@ -256,27 +486,50 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
   // ---- SHOW CONTROLS ON PLAY, HIDE AFTER 2 SECONDS OF INACTIVITY ----
   useEffect(() => {
     if (isPaused) {
-        setShowControls(false);
-        if (controlsTimeout) clearTimeout(controlsTimeout);
-        return;
+      setShowControls(false); // Hide controls when paused
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+      return;
     }
 
-    // Show immediately on play
+    // Show controls on play
     setShowControls(true);
     resetHideTimer();
 
-    // eslint-disable-next-line
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
   }, [isPaused]);
 
-  // ---- click on video → show controls for 2 s ----
-  const handleVideoClick = () => {
+  // Handle touch start for mobile
+  const handleTouchStart = (e) => {
+    e.stopPropagation();
     lastInteractionRef.current = Date.now();
 
+    // If paused, do nothing (play button will handle play)
     if (isPaused) {
-        playVideo();
-        return;
+      return;
     }
 
+    // If playing, show controls and reset timer
+    setShowControls(true);
+    resetHideTimer();
+  };
+
+  // ---- click on video → show controls for 2 s ----
+  const handleVideoClick = (e) => {
+    e.stopPropagation(); // Prevent bubbling to parent elements
+    lastInteractionRef.current = Date.now();
+
+    // If the video is paused, do nothing here (play button handles play)
+    if (isPaused) {
+      return; // Let the play button handle the play action
+    }
+
+    // If playing, show controls and reset timer
     setShowControls(true);
     resetHideTimer();
   };
@@ -286,12 +539,11 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
     if (isPaused) return;
     isHoveringRef.current = true;
     setShowControls(true);
+    resetHideTimer(); // Reset timer on mouse enter
   };
   const handleMouseLeave = () => {
     isHoveringRef.current = false;
-    if (controlsTimeout) clearTimeout(controlsTimeout);
-    const id = setTimeout(() => setShowControls(false), 2000);
-    setControlsTimeout(id);
+    resetHideTimer(); // Reset timer on mouse enter
   };
 
   // 4. SEEK — BLOCK SKIP
@@ -299,8 +551,7 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
     if (seconds > absoluteMaxWatchedRef.current + 1) return; // ← Use absolute max
     const p = getPlayer();
     if (!p) return;
-    if (initialData?.localVideoSrc) p.currentTime = seconds;
-    else p.seekTo(seconds);
+    p.seekTo(seconds);
   };
 
   // 5. RESET PROGRESS
@@ -381,8 +632,6 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
 
   // === [9] YOUTUBE: HIDE PROGRESS BAR ON LOAD ===
   useEffect(() => {
-    if (initialData?.localVideoSrc) return;
-
     const iframe = ytIframeRef.current;
     if (!iframe) return;
 
@@ -393,31 +642,13 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
       const container = doc.querySelector('.ytp-progress-bar-container');
       if (container) {
         hideProgress(container);
+        hidePopups(doc); // Hide popups on load
         clearInterval(waitForPlayer);
       }
     }, 200);
 
     return () => clearInterval(waitForPlayer);
-  }, [initialData?.localVideoSrc]);
-
-  // === [10] NATIVE VIDEO: HIDE TIMELINE ===
-  useEffect(() => {
-    if (!initialData?.localVideoSrc) return;
-
-    const style = document.createElement('style');
-    style.textContent = `
-      video::-webkit-media-controls-timeline,
-      video::-webkit-media-controls-timeline-container,
-      video::-webkit-media-controls-current-time-display,
-      video::-webkit-media-controls-time-remaining-display {
-        display: none !important;
-        pointer-events: none !important;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => document.head.removeChild(style);
-  }, [initialData?.localVideoSrc]);
+  }, []);
 
   // === [11] RE-APPLY PROTECTION EVERY 500ms ===
   useEffect(() => {
@@ -433,7 +664,7 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
     return () => {
       if (protectTimer.current) clearInterval(protectTimer.current);
     };
-  }, [initialData?.localVideoSrc]);
+  }, []);
 
   // === [12] MUTATIONOBSERVER: RE-HIDE IF ADDED BACK ===
   useEffect(() => {
@@ -476,51 +707,24 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
       observer.disconnect();
       if (interval) clearInterval(interval);
     };
-  }, [initialData?.localVideoSrc]);
+  }, []);
 
-  // 13. FETCH METADATA — ONLY FOR YOUTUBE
+  // 13. SET METADATA FROM initialData.video (NO API CALL)
   useEffect(() => {
-    if (initialData?.localVideoSrc) return;
-    if (!initialData?.videoId) return;
+    const video = initialData?.video;
+    if (!video) return;
 
-    const fetchMeta = async () => {
-      try {
-        const ytRes = await fetch(
-          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${initialData.videoId}&key=${apiKey}`
-        );
-        const yt = await ytRes.json();
-        const item = yt.items?.[0];
-        if (item) {
-          setTitle(item.snippet.title);
-          setDuration(parseDuration(item.contentDetails.duration));
-          setViews(item.statistics.viewCount || 0);
-          setLikes(item.statistics.likeCount || 0);
-
-          const rydRes = await fetch(
-            `https://returnyoutubedislikeapi.com/votes?videoId=${initialData.videoId}`
-          );
-          const ryd = await rydRes.json();
-          setDislikes(ryd.dislikes || 0);
-        }
-      } catch (e) {
-        console.error('Metadata fetch error', e);
-      }
-    };
-    fetchMeta();
-  }, [initialData?.videoId, apiKey, initialData?.localVideoSrc]);
+    setTitle(video.title || 'Untitled Video');
+    setDuration(parseDuration(video.videoDuration));
+    setLikes(video.likeCount || 0);
+    setViews(0); // No view count in API response
+  }, [initialData?.video]);
 
   // 14. PLAYER HANDLERS
   const onReady = (e) => {
     setPlayer(e.target);
     ytIframeRef.current = e.target.getIframe();
     seekTo(currentTime);
-  };
-
-  const onLoadedMetadata = () => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = currentTime;
-      setDuration(videoRef.current.duration);
-    }
   };
 
   const onTimeUpdate = () => {
@@ -590,26 +794,23 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
   };
 
   // 15. HELPERS
-  const getPlayer = () => initialData?.localVideoSrc ? videoRef.current : player;
-  const getCurrentTime = () => initialData?.localVideoSrc ? (videoRef.current?.currentTime || 0) : (player?.getCurrentTime?.() || 0);
-  const getPlaybackRate = () => initialData?.localVideoSrc ? (videoRef.current?.playbackRate || 1) : (player?.getPlaybackRate?.() || 1);
+  const getPlayer = () => player;
+  const getCurrentTime = () => player?.getCurrentTime?.() || 0;
+  const getPlaybackRate = () => player?.getPlaybackRate?.() || 1;
   const setPlaybackRate = (r) => {
-    if (initialData?.localVideoSrc && videoRef.current) videoRef.current.playbackRate = r;
-    else if (player) player.setPlaybackRate(r);
+    if (player) player.setPlaybackRate(r);
   };
   const pauseVideo = () => {
-    if (initialData?.localVideoSrc && videoRef.current) videoRef.current.pause();
-    else if (player) player.pauseVideo();
+    if (player) player.pauseVideo();
     setIsPaused(true);
   };
   const playVideo = () => {
-    if (initialData?.localVideoSrc && videoRef.current) videoRef.current.play();
-    else if (player) player.playVideo();
+    if (player) player.playVideo();
     setIsPaused(false);
   };
 
   const shareVideo = async () => {
-    const url = `https://www.youtube.com/watch?v=${initialData?.videoId}`;
+    const url = initialData?.video?.videoUrl || `https://www.youtube.com/watch?v=${initialData?.video?.videoId}`;
     try { await navigator.share({ title, text: 'Check out this video!', url }); }
     catch { navigator.clipboard.writeText(url); alert('URL copied to clipboard!'); }
   };
@@ -636,6 +837,7 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
       }`}
       onClick={handleOverlayClick}
     >
+      <Toaster position="top-center" toastOptions={{ duration: 5000 }} />
       <div
         className={`relative bg-[linear-gradient(to_bottom_left,#0E083C_55%,#06031E_100%)] rounded-2xl w-full max-w-[90%] md:max-w-md lg:max-w-[55%] transform transition-all duration-300 ${
           isAnimated ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
@@ -657,50 +859,34 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
                 ref={videoContainerRef}
                 className="bg-gray-700 relative"
                 onClick={handleVideoClick}
+                onTouchStart={handleTouchStart}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
               >
-                {initialData?.localVideoSrc ? (
-                  <video
-                    ref={videoRef}
-                    src={initialData.localVideoSrc}
-                    onLoadedMetadata={onLoadedMetadata}
-                    onTimeUpdate={onTimeUpdate}
-                    onPlay={onPlay}
-                    onPause={onPause}
-                    onSeeking={onSeeking}
-                    onSeeked={onSeeked}
-                    onEnded={onPause}
-                    className="w-full h-auto rounded pointer-events-none"
-                    controls
-                    controlsList="noduration noplaybackrate"
-                  />
-                ) : (
-                  <YouTube
-                    videoId={initialData?.videoId}
-                    opts={{
-                      height: '315',
-                      width: '100%',
-                      playerVars: {
-                        controls: 1,
-                        modestbranding: 1,
-                        rel: 0,
-                        fs: 1,
-                        iv_load_policy: 3,
-                      },
-                    }}
-                    onReady={onReady}
-                    onPlay={onPlay}
-                    onPause={onPause}
-                    onStateChange={(e) => {
-                      if (e.data === 3) onSeeking();
-                      if (e.data === 1 || e.data === 2) onSeeked();
-                      if (e.data === 0) onPause();
-                    }}
-                    containerClassName="yt-progress-hider"
-                    className="rounded pointer-events-none"
-                  />
-                )}
+                <YouTube
+                  videoId={initialData?.video?.videoId}
+                  opts={{
+                    height: '315',
+                    width: '100%',
+                    playerVars: {
+                      controls: 0,
+                      modestbranding: 1,
+                      rel: 0,
+                      fs: 1,
+                      iv_load_policy: 3,
+                    },
+                  }}
+                  onReady={onReady}
+                  onPlay={onPlay}
+                  onPause={onPause}
+                  onStateChange={(e) => {
+                    if (e.data === 3) onSeeking();
+                    if (e.data === 1 || e.data === 2) onSeeked();
+                    if (e.data === 0) onPause();
+                  }}
+                  containerClassName="yt-progress-hider"
+                  className="rounded pointer-events-none h-[50%] md:h-[315px]"
+                />
                 {isPaused && (
                   <button
                     onClick={(e) => {
@@ -826,11 +1012,6 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
                 .yt-progress-hider .ytp-scrubber-button {
                   display: none !important;
                 }
-                video::-webkit-media-controls-timeline,
-                video::-webkit-media-controls-current-time-display,
-                video::-webkit-media-controls-time-remaining-display {
-                  display: none !important;
-                }
               `}</style>
 
               <div className='grid grid-cols-2 gap-4'>
@@ -851,32 +1032,36 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
                     </button>
                 )}
                 <button
-                    onClick={() => setLiked(!liked)}
+                    onClick={handleLikeVideo}
+                    disabled={isLiking || liked}
                     className={`
                         border-2 font-bold 
                         transition-all duration-300 ease-in-out 
-                        hover:scale-105 
                         lg:px-4 md:px-3 px-2 
                         py-2
                         rounded-md mb-4 transition mt-6 md:mt-12 
                         lg:text-[16px] md:text-[13.58px] text-[10.18px]
                         flex items-center justify-center gap-2
+                        relative
+                        ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}
                         ${
-                        liked
-                            ? 'bg-[#FEC84D] font-bold text-[#1A202C]'
-                            : 'border-[#FEC84D] text-[#FEC84D] hover:bg-yellow-900 hover:text-white'
+                            liked
+                            ? 'bg-[#FEC84D] font-bold text-[#1A202C] cursor-not-allowed'
+                            : 'border-[#FEC84D] text-[#FEC84D] hover:bg-yellow-900 hover:text-white hover:scale-105 '
                         }
                     `}
-                    >
-                    {liked ? (
+                >
+                    {isLiking ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#FEC84D]"></div>
+                    ) : liked ? (
                         <>
-                        <AiFillHeart className="text-lg" />
-                        Liked
+                            <AiFillHeart className="text-lg" />
+                            Liked
                         </>
                     ) : (
                         <>
-                        <AiOutlineHeart className="text-lg" />
-                        Like
+                            <AiOutlineHeart className="text-lg" />
+                            Like
                         </>
                     )}
                 </button>
@@ -885,18 +1070,22 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
               {/* MARK AS COMPLETE BUTTON - FULL WIDTH */}
               {isCompleted && liked && (
                 <button
-                    onClick={() => !isMarkedComplete && setIsMarkedComplete(true)}
-                    disabled={isMarkedComplete}
+                    onClick={handleMarkComplete}
+                    disabled={isMarkedComplete || isCompleting}
                     className={`
                     w-full mt-2 mb-4 py-3 md:py-4 rounded-lg font-bold md:text-lg text-[12px]
                     flex items-center justify-center gap-2 transition-all duration-300
                     ${isMarkedComplete
                         ? 'bg-green-600 text-white hover:bg-green-700'
+                        : isCompleting
+                        ? 'bg-gray-600 text-white cursor-not-allowed'
                         : 'border-2 border-[#FEC84D] text-[#FEC84D] hover:bg-yellow-900 hover:text-white'
                     }
                     `}
                 >
-                    {isMarkedComplete ? (
+                    {isCompleting ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#FEC84D]"></div>
+                    ) : isMarkedComplete ? (
                     <>
                         <BsCheckSquareFill className="md:text-xl text-lg text-white" />
                         Completed
@@ -909,15 +1098,14 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
                     )}
                 </button>
               )}
-
-              <h2 className="lg:text-[28px] md:text-[24px] text-[20px] font-bold text-[#CACACA] lg:mb-2 mb-1 text-center">
+              <h2 className="lg:text-[24px] md:text-[20px] text-[14px] font-bold text-[#CACACA] mb-4 text-center">
                 {title}
               </h2>
 
-              <div className="flex justify-between items-center mt-2 text-sm">
+              <div className="flex justify-between items-center mt-2 text-xs md:text-sm">
                 <span className="text-[#CACACA] flex items-center gap-2"><FaClock />{formatTime(currentTime)} sec</span>
-                <span className="text-yellow-400">{views.toLocaleString()} points</span>
-                <span className="text-[#CACACA]">👍 {formatNumber(likes)}</span>
+                <span className="text-yellow-400">{initialData?.video?.earning} points</span>
+                <span className="text-[#CACACA]">Likes: {formatNumber(likes)} 👍</span>
                 <button onClick={shareVideo} className="text-blue-400">
                   ➤ SHARE
                 </button>
@@ -932,7 +1120,7 @@ const VideoPlayerModal = ({ initialData, apiKey = 'YOUR_API_KEY', onClose }) => 
               <div className="mt-6">
                 <h3 className="text-md font-bold text-[#CACACA]">Watch Guide</h3>
                 <ol className="list-decimal pl-5 space-y-1 text-[#CACACA] text-[12px] md:text-[14px] lg:text-[18px]">
-                  <li>Ensure you have signed up with Gmail before - If you have not, click <a href="https://exgeid-backend.onrender.com/api/v1/auth/google" className="text-[#FEC84D] hover:text-yellow-200 underline">here</a>.</li>
+                  <li>Ensure you have signed up with Gmail with the same email in your profile before; and allowed permissions - If you have not, click <a href="https://exgeid-backend.onrender.com/api/v1/auth/google" className="text-[#FEC84D] hover:text-yellow-200 underline">here</a>.</li>
                   <li>Watch Till the End - Do not skip or fast-forward.</li>
                   <li>Like the video - Engage with the video to qualify.</li>
                   <li>Complete Linked Actions - Follow any IG, TikTok, or group links provided.</li>

@@ -228,18 +228,19 @@ const Videos = () => {
               <span className="text-sm text-gray-300">{Math.round(progressPercentage)}%</span>
             </div>
 
-            <div className="flex justify-between items-center mt-2">
+            <div className="w-full items-center mt-2">
               <div>
-                <p className="mt-4 text-gray-300 font-medium flex items-center md:gap-2 md:w-auto w-[70%]">
-                  Pending Earnings <FaWallet className="text-white-400" />
+                <p className="mt-4 text-gray-300 font-medium flex items-center md:gap-2 md:w-auto">
+                  Pending Daily Earnings <FaWallet className="text-white-400 ml-2" />
                 </p>
-                <span className="text-yellow-400 font-bold">
-                  {videoData.pendingEarnings?.pendingAmount?.toLocaleString() || "0"} Points
-                </span>
+                <div className="text-yellow-400 font-bold w-[100%] flex justify-between">
+                  <div className='flex-grow'>{videoData.points?.pendingPoints?.toLocaleString()} Points </div>
+                  <span className="text-[#CACACA]">(out of {videoData.points?.totalDayPoints?.toLocaleString()})</span>
+                </div>
               </div>
-              <button className="bg-[#8F0406] md:px-6 md:py-2 px-3 py-1 rounded-lg text-sm font-semibold">
+              {/*<button className="bg-[#8F0406] md:px-6 md:py-2 px-3 py-1 rounded-lg text-sm font-semibold">
                 View Total Earnings
-              </button>
+              </button>*/}
             </div>
           </div>
 
@@ -261,7 +262,7 @@ const Videos = () => {
             {videoData.watchList.map((video, idx) => (
               <div
                 key={idx}
-                className="bg-gradient-to-r from-[#06031E] to-[#0E083C] rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                className="bg-gradient-to-r from-[#06031E] to-[#0E083C] rounded-xl p-4 grid grid-cols-1 md:grid-cols-[4fr_1fr_1fr] gap-4 md:gap-28"
               >
                 {/* Left - Platform Logo */}
                 <div className="flex items-center gap-4">
@@ -290,8 +291,8 @@ const Videos = () => {
 
                 {/* Right - Button */}
                 <button
-                  onClick={() => openModal('watch-video', video)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 self-start md:self-auto transition-all ${
+                  onClick={() => openModal('watch-video', { video: video })}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 self-start md:self-auto transition-all ${
                     video.completed
                       ? "bg-green-600 hover:bg-green-700 text-white"
                       : "bg-[#8F0406] hover:bg-red-700 text-white"

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import angel1 from "../assets/angel1.png";
 import angel2 from "../assets/angel2.png";
 import angel from "../assets/angel.png";
@@ -22,8 +23,8 @@ import { Toaster, toast } from "react-hot-toast";
 const COLORS = ["#C60508", "#C0D2D4"];
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState(null);
-  const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -34,11 +35,10 @@ const Dashboard = () => {
   const [subscribersError, setSubscribersError] = useState(null);
 
   const DASHBOARD_API_URL = "https://exgeid-backend.onrender.com/api/v1/users/dashboard-info";
-  const PROFILE_API_URL = "https://exgeid-backend.onrender.com/api/v1/users/get/profile-info";
   const REFRESH_TOKEN_URL = "https://exgeid-backend.onrender.com/api/v1/refresh/token";
   const NEW_SUBSCRIBERS_API_URL = "https://exgeid-backend.onrender.com/api/v1/users/new-subscribers"; // New endpoint
 
-  // === Toast Functions (Updated to match Videos page) ===
+  // === Toast Functions ===
   const showSuccessToast = (message) => {
     toast.success(message, {
       position: "top-center",
@@ -225,24 +225,6 @@ const Dashboard = () => {
         const data = response.data || response;
         setDashboardData(data);
 
-        // Fetch profile after dashboard success
-        const profRes = await fetch(PROFILE_API_URL, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!profRes.ok) {
-          const profErrorText = await profRes.text();
-          throw new Error(`Profile request failed: ${profRes.status} - ${profErrorText}`);
-        }
-
-        const profResponse = await profRes.json();
-        const prof = profResponse.data || profResponse;
-        setProfileData(prof);
-
         // Now fetch subscribers
         await fetchSubscribers(accessToken);
 
@@ -287,23 +269,6 @@ const Dashboard = () => {
             const retryData = retryResponse.data || retryResponse;
             setDashboardData(retryData);
 
-            // Retry profile fetch
-            const retryProfRes = await fetch(PROFILE_API_URL, {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${newAccessToken}`,
-                "Content-Type": "application/json",
-              },
-            });
-
-            if (!retryProfRes.ok) {
-              throw new Error(`Retry profile failed: ${retryProfRes.status}`);
-            }
-
-            const retryProfResponse = await retryProfRes.json();
-            const retryProf = retryProfResponse.data || retryProfResponse;
-            setProfileData(retryProf);
-
             // Retry subscribers
             await fetchSubscribers(newAccessToken);
 
@@ -316,7 +281,6 @@ const Dashboard = () => {
           setError("Failed to load dashboard. Please try again later.");
           showErrorToast("Could not load dashboard. Please try again.");
           setDashboardData(null);
-          setProfileData(null);
           setSubscribersLoading(false);
           setSubscribers([]);
           setSubscribersError("Failed to load subscribers.");
@@ -338,9 +302,9 @@ const Dashboard = () => {
       ];
     }
 
-    const completedTasks = dashboardData.dailyTaskData?.tasksTrack?.completedTask || 0;
-    const totalTasks = dashboardData.dailyTaskData?.tasksTrack?.totalTask || 1;
-    const total = totalTasks || 100;
+    const completedTasks = dashboardData.dailyTaskData?.tasksTrack?.completedTask;
+    const totalTasks = dashboardData.dailyTaskData?.tasksTrack?.totalTask;
+    const total = totalTasks;
     const completedPercentage = totalTasks > 0 ? (completedTasks / total) * 100 : 0;
   
     return [
@@ -349,8 +313,8 @@ const Dashboard = () => {
     ];
   };
 
-  const totalTasksCount = dashboardData?.dailyTaskData?.tasksTrack?.totalTask || 0;
-  const completedTasksCount = dashboardData?.dailyTaskData?.tasksTrack?.completedTask || 0;
+  const totalTasksCount = dashboardData?.dailyTaskData?.tasksTrack?.totalTask;
+  const completedTasksCount = dashboardData?.dailyTaskData?.tasksTrack?.completedTask;
 
   const pieData = getPieChartData();
 
@@ -527,7 +491,7 @@ const Dashboard = () => {
           <div>
             <h1 className="text-[22px] md:text-[28px] lg:text-[32px] text-white font-regular flex items-center gap-2">
               <img src={angel} alt="angel_top" className="w-20 h-20" />
-              Hi {dataSource.userFullName || "User"}!! 
+              Hi {dataSource.userFullName}!! 
             </h1>
           </div>
 
@@ -542,10 +506,10 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <p className="text-[13px] lg:text-[17.5px] font-semibold">
-                      {dataSource.userFullName || "User"}
+                      {dataSource.userFullName}
                     </p>
                     <p className="text-[12px] lg:text-[15px] font-medium mt-1">
-                      Referred by: {dataSource.userProfileData?.referredBy || "Unknown"}
+                      Referred by: {dataSource.userProfileData?.referredBy || "None"}
                     </p>
                   </div>
                 </div>
@@ -557,10 +521,10 @@ const Dashboard = () => {
                       <div
                         className="md:h-3 h-2 rounded-full bg-red-600 transition-all duration-300"
                         style={{
-                          width: `${profileData?.accountDetails?.profileInfo?.totalDay > 0 
+                          width: `${dataSource?.userProfileData?.totalDay > 0 
                             ? Math.min(
-                                (profileData.accountDetails.profileInfo.day / 
-                                profileData.accountDetails.profileInfo.totalDay) * 100,
+                                (dataSource?.userProfileData?.day / 
+                                dataSource?.userProfileData?.totalDay) * 100,
                                 100
                               )
                             : 0
@@ -569,10 +533,10 @@ const Dashboard = () => {
                       />
                     </div>
                     <div className="text-[11px] lg:text-[15px] text-[#9EA2AD]">
-                      {profileData?.accountDetails?.profileInfo?.totalDay > 0 
+                      {dataSource?.userProfileData?.totalDay > 0 
                         ? Math.round(
-                          (profileData.accountDetails.profileInfo.day / 
-                          profileData.accountDetails.profileInfo.totalDay) * 100
+                          (dataSource?.userProfileData?.day / 
+                          dataSource?.userProfileData?.totalDay) * 100
                         )
                         : 0   
                       }%
@@ -580,11 +544,11 @@ const Dashboard = () => {
                   </div>
                   <div className="flex items-center justify-between mt-4 text-[11px] lg:text-[15px] text-gray-400">
                     <div className="flex items-center gap-1">
-                      <span>Level {profileData?.accountDetails?.profileInfo?.level || 1}</span>
+                      <span>Level {dataSource?.userProfileData?.level}</span>
                       <img src={badge} className="w-4 h-4 rounded-sm" />
                     </div>
                     <div className="flex items-center gap-1">
-                      <span>Level {profileData?.accountDetails?.profileInfo?.level != 10 ? profileData?.accountDetails?.profileInfo?.level + 1 || 2: profileData?.accountDetails?.profileInfo?.level}</span>
+                      <span>Level {dataSource?.userProfileData?.level != 10 ? dataSource?.userProfileData?.level + 1 : dataSource?.userProfileData?.level}</span>
                       <img src={badge} className="w-4 h-4 rounded-sm" />
                     </div>
                   </div>
@@ -592,38 +556,38 @@ const Dashboard = () => {
 
                 <div className="mt-8 text-center">
                   <p className="text-[14px] lg:text-[17.5px] font-medium">
-                    You are currently on Level {profileData?.accountDetails?.profileInfo?.level || 1} with {profileData?.pointsData?.totalLevelPoint || 0} points
+                    You are currently on Level {dataSource?.userProfileData?.level} with {dataSource?.pointsData?.totalDayPoint} points
                   </p>
                 </div>
 
                 {/* Tasks */}
                 <div className="mt-8 space-y-6 text-[12px] lg:text-[14px] font-medium">
-                  <label className="flex items-center gap-2">
+                  <label className={`flex items-center gap-2 ${dataSource.dailyTaskData?.totalTasks?.totalVideos == 0 ? "hidden": "block"}`}>
                     <input
                       type="checkbox"
                       readOnly
-                      checked={dataSource.dailyTaskData?.completedTasks?.watchedVideos >= 5}
+                      checked={dataSource.dailyTaskData?.completedTasks?.watchedVideos == dataSource.dailyTaskData?.totalTasks?.totalVideos}
                       className="w-4 h-4 accent-red-900 rounded-lg"
                     />
-                    <span className="">Watch videos ({dataSource.dailyTaskData?.completedTasks?.watchedVideos || 0}/{dataSource.dailyTaskData?.totalTasks?.totalVideos || 0})</span>
+                    <span className="">Watch &amp; Like videos ({dataSource.dailyTaskData?.completedTasks?.watchedVideos}/{dataSource.dailyTaskData?.totalTasks?.totalVideos})</span>
                   </label>
-                  <label className="flex items-center gap-2">
+                  <label className={`flex items-center gap-2 ${dataSource.dailyTaskData?.totalTasks?.accountsToSubscribe == 0 ? "hidden" : "block"}`}>
                     <input
                       type="checkbox"
                       readOnly
-                      checked={dataSource.dailyTaskData?.completedTasks?.accountsSubscribed >= 2}
+                      checked={dataSource.dailyTaskData?.completedTasks?.accountsSubscribed == dataSource.dailyTaskData?.totalTasks?.accountsToSubscribe}
                       className="w-4 h-4 accent-red-900 rounded-lg"
                     />
-                    <span className="">Subscribe &amp; Like ({dataSource.dailyTaskData?.completedTasks?.accountsSubscribed || 0}/{dataSource.dailyTaskData?.totalTasks?.accountsToSubscribe || 0})</span>
+                    <span className="">Subscribe/Follow social links ({dataSource.dailyTaskData?.completedTasks?.accountsSubscribed}/{dataSource.dailyTaskData?.totalTasks?.accountsToSubscribe})</span>
                   </label>
-                  <label className="flex items-center gap-2">
+                  {/*<label className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       readOnly
                       className="w-4 h-4 accent-red-900 rounded-lg"
                     />
                     <span className="">Follow social links</span>
-                  </label>
+                  </label>*/}
                 </div>
               </div>
             </div>
@@ -638,7 +602,7 @@ const Dashboard = () => {
                   <div>
                     <h3 className="text-[12px] md:text-[15px] font-semibold">Total Earnings</h3>
                     <p className="text-[15px] md:text-[19px] font-bold text-yellow-400">
-                      ₦{(dataSource.userWalletData?.paidAmount || 0).toLocaleString()}
+                      ₦{(dataSource.userWalletData?.amountLeftInWallet).toLocaleString()}
                     </p>
                   </div>
                   <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center">
@@ -649,9 +613,9 @@ const Dashboard = () => {
                 <div className="grid grid-cols-2 gap-10 text-[12px] md:text-[15px] text-gray-300">
                   <div className="flex items-center justify-start gap-4">
                     <div className="min-w-[120px]">
-                      <div className="font-bold text-[#CACACA] mt-2">Recent Earnings</div>
+                      <div className="font-bold text-[#CACACA] mt-2">Earned Points</div>
                       <div className="font-semibold text-[#B5B5B5] mt-2">
-                        ₦{(dataSource.userWalletData?.paidAmount || 0).toLocaleString()}
+                        {(dataSource.pointsData?.totalDayPoint).toLocaleString()} points
                       </div>
                     </div>
                     <FaSyncAlt className="text-white text-lg" />
@@ -660,7 +624,7 @@ const Dashboard = () => {
                     <div className="min-w-[120px]">
                       <div className="font-bold text-[#CACACA] mt-2">Referrals</div>
                       <div className="font-semibold text-[#B5B5B5] mt-2">
-                        {dataSource.dailyTaskData?.completedTasks?.referralCount || 0}
+                        {dataSource.dailyTaskData?.completedTasks?.referralCount}
                       </div>
                     </div>
                     <FaUsers className="text-white text-lg" />
@@ -678,7 +642,7 @@ const Dashboard = () => {
                     <div className="min-w-[120px]">
                       <div className="font-bold text-[#CACACA] mt-2">Total Videos</div>
                       <div className="font-semibold text-[#B5B5B5] mt-2">
-                        {dataSource.dailyTaskData?.completedTasks?.watchedVideos || 0} videos
+                        {dataSource.dailyTaskData?.completedTasks?.watchedVideos} videos
                       </div>
                     </div>
                     <FaVideo className="text-white text-lg" />
@@ -695,42 +659,42 @@ const Dashboard = () => {
               <div className="relative z-10">
                 <div className="flex">
                   <div className="flex justify-between items-center text-[14px] lg:text-[17.5px] font-semibold w-full">
-                    <h3 className="">Level {profileData?.accountDetails?.profileInfo?.level || 1} - In Progress</h3>
+                    <h3 className="">Level {dataSource?.userProfileData?.level} - In Progress</h3>
                     <div className="flex gap-2 items-center">
-                      <span>Day {profileData?.accountDetails?.profileInfo?.day}/{profileData?.accountDetails?.profileInfo?.totalDay}</span>
+                      <span>Day {dataSource?.userProfileData?.day}/{dataSource?.userProfileData?.totalDay}</span>
                       <div className="w-5 h-5 rounded flex items-center justify-center">⏳</div>
                     </div>
                   </div>
                 </div>
                 <p className="text-[12px] lg:text-[14px] font-medium mt-3">
-                  Complete all tasks within {profileData?.accountDetails?.profileInfo?.totalDay || 0} days to unlock your bonus!
+                  Complete all tasks within {dataSource?.userProfileData?.totalDay} days to unlock your bonus!
                 </p>
                 <div className="mt-6 space-y-6 text-[12px] lg:text-[14px] font-medium">
-                  <label className="flex items-center gap-2">
-                    <input 
-                      type="checkbox" 
-                      checked={dataSource.dailyTaskData?.completedTasks?.watchedVideos >= 5} 
-                      readOnly 
-                      className="w-4 h-4 accent-red-900" 
+                  <label className={`flex items-center gap-2 ${dataSource.dailyTaskData?.totalTasks?.totalVideos == 0 ? "hidden": "block"}`}>
+                    <input
+                      type="checkbox"
+                      readOnly
+                      checked={dataSource.dailyTaskData?.completedTasks?.watchedVideos == dataSource.dailyTaskData?.totalTasks?.totalVideos}
+                      className="w-4 h-4 accent-red-900 rounded-lg"
                     />
-                    <span className="">Watch videos</span>
+                    <span className="">Watch + Like videos</span>
                   </label>
-                  <label className="flex items-center gap-2">
-                    <input 
-                      type="checkbox" 
-                      checked={dataSource.dailyTaskData?.completedTasks?.accountsSubscribed >= 2} 
-                      readOnly 
-                      className="w-4 h-4 accent-red-900" 
+                  <label className={`flex items-center gap-2 ${dataSource.dailyTaskData?.totalTasks?.accountsToSubscribe == 0 ? "hidden" : "block"}`}>
+                    <input
+                      type="checkbox"
+                      readOnly
+                      checked={dataSource.dailyTaskData?.completedTasks?.accountsSubscribed == dataSource.dailyTaskData?.totalTasks?.accountsToSubscribe}
+                      className="w-4 h-4 accent-red-900 rounded-lg"
                     />
-                    <span className="">Subscribe &amp; Like</span>
+                    <span className="">Subscribe or Follow social links</span>
                   </label>
-                  <label className="flex items-center gap-2">
+                  {/*<label className="flex items-center gap-2">
                     <input type="checkbox" readOnly className="w-4 h-4 accent-red-900" />
                     <span className="">Follow social links</span>
-                  </label>
+                  </label>*/}
                 </div>
                 <div className="mt-6 flex justify-end">
-                  <button className="bg-[#8F0406] text-white md:text-[14px] text-[12px] px-5 py-2 rounded-lg">
+                  <button onClick={() => navigate("/tasks")} className="bg-[#8F0406] hover:bg-red-600 hover:scale-105 text-white md:text-[14px] text-[12px] px-5 py-2 rounded-lg">
                     Continue
                   </button>
                 </div>
@@ -810,9 +774,9 @@ const Dashboard = () => {
                   <div className="flex-1 flex flex-col justify-center">
                     <h4 className="lg:text-[16px] text-[12px] font-semibold mb-3">Recent Activity</h4>
                     <ul className="space-y-2 md:text-[12px] text-[10px] list-disc list-outside marker:text-red-500">
-                      <li>+{dataSource.dailyTaskData?.completedTasks?.watchedVideos || 0} videos watched</li>
-                      <li>{dataSource.dailyTaskData?.completedTasks?.referralCount || 0} new referrals</li>
-                      <li>{dataSource.dailyTaskData?.completedTasks?.accountsSubscribed || 0} accounts subscribed</li>
+                      <li>+{dataSource.dailyTaskData?.completedTasks?.watchedVideos} videos watched</li>
+                      <li>{dataSource.dailyTaskData?.completedTasks?.referralCount} new referrals</li>
+                      <li>{dataSource.dailyTaskData?.completedTasks?.accountsSubscribed} accounts subscribed</li>
                     </ul>
                   </div>
                 </div>
@@ -823,12 +787,12 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between h-25">
                   <div>
                     <div className="text-[12px] md:text-[16px] font-semibold">Days Streak</div>
-                    <div className="text-[15px] md:text-[19px] font-semibold text-yellow-400">{profileData?.accountDetails?.profileInfo?.day} days 🔥</div>
+                    <div className="text-[15px] md:text-[19px] font-semibold text-yellow-400">{dataSource?.userProfileData?.dayStreak} days 🔥</div>
                   </div>
                 </div>
                 <div className="items-center h-15">
                   <div className="text-[12px] md:text-[16px]">
-                    You've checked in for {profileData?.accountDetails?.profileInfo?.day} days straight!
+                    You've checked in for {dataSource?.userProfileInfo?.day} days straight!
                   </div>
                   <div className="text-[12px] md:text-[16px]">Keep your streak going and keep earning!!!</div>
                 </div>

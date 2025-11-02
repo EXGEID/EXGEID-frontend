@@ -28,7 +28,7 @@ const Withdrawals = () => {
 
         {/* outline yellow button */}
         <button onClick={() => navigate('?modal=withdrawal-requirements')} className="border border-yellow-500 text-yellow-500 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold text-sm sm:text-base hover:bg-yellow-500/10">
-          Withdraw requirement
+          Withdrawal requirements
         </button>
       </div>
 

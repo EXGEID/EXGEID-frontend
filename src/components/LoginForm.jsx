@@ -260,18 +260,18 @@ const LoginModal = ({ onClose, openModal, closeCurrentAndOpenNext }) => {
 
             <div className="flex justify-between items-center lg:text-[18px] md:text-[16.25px] text-[12.19px] font-regular md:mt-8 mt-4">
               <div className="flex items-center">
-                <input
+                {/*<input
                   type="checkbox"
                   className="h-4 w-4 text-[#FEC84D] focus:ring-[#FEC84D] border-[#09052C] bg-[#09052C]"
                 />
-                <label className="lg:ml-2 ml-1 text-white">Remember me</label>
+                <label className="lg:ml-2 ml-1 text-white">Remember me</label>*/}
               </div>
               <Link onClick={() => openModal('forgot-password')} className="text-[#FEC84D] hover:text-yellow-200">Forgot Password?</Link>
             </div>
 
             <button
               type="submit"
-              className={`w-full bg-[#8F0406] hover:bg-red-700 hover:scale-110 text-white lg:text-[18px] md:text-[14px] text-[16px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition mt-8 md:mt-12 flex items-center justify-center ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-full bg-[#8F0406] hover:bg-red-700 hover:scale-110 text-white lg:text-[18px] md:text-[14px] text-[16px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition mt-8 md:mt-10 flex items-center justify-center ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={loading}
             >
               {loading ? (
