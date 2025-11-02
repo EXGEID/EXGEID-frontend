@@ -116,7 +116,7 @@ const TaskCard = ({ title, progress, earnings, due, taskType, taskData, showSucc
       </div>
 
       {/* Right side */}
-      <div className="flex flex-col md:items-end mt-3 md:mt-0 gap-2 w-full">
+      <div className="flex flex-col md:items-end mt-3 md:mt-0 gap-2 w-full md:w-auto">
         <div className="flex items-center text-xs text-gray-400 text-center">
           <FaClock className="mr-1" /> {due}
         </div>
