@@ -183,7 +183,7 @@ const HeroSection = () => {
                 
     <div className="bg-[#09052C] p-6 lg:w-[80%] w-full mx-auto shadow-lg">
       {/* Title */}
-      <h2 className="text-white text-center lg:text-[22px] text-[18px] font-semibold mb-4">Sign Up Today to Start Earning</h2>
+      <h2 className="text-white text-center lg:text-[22px] text-[18px] font-semibold mb-4">Sign Up Today and Start Earning your bonuses</h2>
 
       {/* Email Input 
       <div className="flex items-center border border-gray-500 rounded-lg px-3 py-2 mb-4">

@@ -49,7 +49,7 @@ const TypingText = ({ text, delay = 0, typingSpeed = 100, className, colorClass 
 const WhoWeAre = () => {
   const titleText = "Who We Are";
   const paragraph1Text = "EXGEID Africa is a cooperative society and digital platform built to empower a new generation of skilled and unskilled entrepreneurs across Africa and the diaspora. We combine technology, teamwork, and financial incentives to create a system where everyday actions lead to real earnings and real impact.";
-  const paragraph2Text = "We're not just helping people earn — we're building a powerful movement of growth, empowerment, and collaboration.";
+  const paragraph2Text = "We're not just helping people earn — we're building a powerful movement of growth, empowerment, and collaboration. Become a member today, let's support each other to grow our businesses by earning cash-transferrable bonuses";
 
   return (
     <section className="bg-[#06031E] flex flex-col md:flex-row justify-between lg:px-24 md:px-16 px-6 lg:pt-32 md:py-24 pt-32 lg:pb-4 pb-6">
