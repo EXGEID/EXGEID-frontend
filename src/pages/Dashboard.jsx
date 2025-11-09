@@ -451,7 +451,6 @@ const Dashboard = () => {
     );
   }
 
-  
   if (error) {
     return (
       <>
@@ -880,7 +879,7 @@ const Dashboard = () => {
                       <li key={idx} className="flex items-center justify-between gap-1">
                         <div className="flex items-center gap-2">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-200 to-red-300 flex items-center justify-center font-bold text-[#ef4444] text-sm overflow-hidden">
-                            {getInitials(sub.fullName)}
+                            {getInitials(sub.userName)}
                           </div>
                           <span className="font-medium text-[12px] md:text-[14px]">{sub.fullName}</span>
                         </div>
