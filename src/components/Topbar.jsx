@@ -51,11 +51,11 @@ const Topbar = () => {
       style: {
         background: "#09052C",
         color: "#CACACA",
-        border: "1px solid #FEC84D", // Updated to #FEC84D
+        border: "1px solid #FEC84D",
         zIndex: 9999,
       },
       iconTheme: {
-        primary: "#FEC84D", // Updated icon color to match border
+        primary: "#FEC84D",
         secondary: "#09052C",
       },
       duration: 3000,
@@ -132,7 +132,7 @@ const Topbar = () => {
         console.log("Attempting to refresh token...");
         const refreshRes = await fetch(REFRESH_TOKEN_URL, {
           method: "GET",
-          credentials: "include", // Include cookies for refresh token sending/management
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -171,8 +171,16 @@ const Topbar = () => {
     };
 
     const initialize = async () => {
-      const accessToken = sessionStorage.getItem("accessToken");
-      
+      // Check for accessToken in query parameters first
+      const urlParams = new URLSearchParams(window.location.search);
+      let accessToken = urlParams.get("accessToken");
+
+      // If no accessToken in query parameters, fall back to sessionStorage
+      if (!accessToken) {
+        accessToken = sessionStorage.getItem("accessToken");
+      }
+
+      // If no accessToken is found in either location
       if (!accessToken) {
         showErrorToast("Authentication required. Please log in.");
         setUser({
@@ -182,6 +190,13 @@ const Topbar = () => {
           isLoading: false
         });
         return;
+      }
+
+      // Store the accessToken in sessionStorage if it came from query parameters
+      if (urlParams.get("accessToken")) {
+        sessionStorage.setItem("accessToken", accessToken);
+        // Clear the accessToken from the URL to prevent exposure
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
 
       try {
@@ -198,9 +213,9 @@ const Topbar = () => {
   }, []);
 
   const AvatarInitials = () => (
-    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center text-sm font-semibold flex-shrink-0 relative">
+    <div className="w-8 h-8 rounded-full bg-gradient-to flu-br from-red-100 to-red-200 flex items-center justify-center text-sm font-semibold flex-shrink-0 relative">
       {user.isLoading ? (
-        <div className="w-4 h-4 border-2 border-[#1A202C] border-t-transparent rounded-full animate-spin"></div> // Updated spinner color to #FEC84D
+        <div className="w-4 h-4 border-2 border-[#1A202C] border-t-transparent rounded-full animate-spin"></div>
       ) : (
         <span className="font-bold text-[#ef4444]">{getInitials(user.name)}</span>
       )}
@@ -209,7 +224,6 @@ const Topbar = () => {
 
   return (
     <>
-      {/* Toaster with high z-index positioned within this component */}
       <Toaster 
         position="top-center"
         containerStyle={{
@@ -236,7 +250,6 @@ const Topbar = () => {
         </button>
 
         <div className="flex items-center ml-auto">
-          {/* Circular avatar with initials and loading spinner */}
           <AvatarInitials />
           <span 
             className={`ml-3 font-medium transition-colors ${

@@ -10,6 +10,7 @@ import TermsAndConditionsModal from '../components/TermsAndConditionsModal';
 import VideoPlayerModal from '../components/VideoPlayer';
 import TaskPrerequisitesModal from '../components/TaskPrerequisites';
 import WithdrawalRequirementsModal from '../components/WithdrawalRequirements';
+import WithdrawalStatusModal from '../components/WithdrawalStatus';
 
 function ModalManager() {
   const [modalStack, setModalStack] = useState([]);
@@ -146,6 +147,11 @@ function ModalManager() {
             )}
             {modal?.name === 'withdrawal-requirements' && (
                 <WithdrawalRequirementsModal
+                    onClose={closeTopModal}
+                />
+            )}
+            {modal?.name === 'withdrawal-status' && (
+                <WithdrawalStatusModal
                     onClose={closeTopModal}
                 />
             )}

@@ -197,14 +197,29 @@ const Dashboard = () => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-      
-      const accessToken = sessionStorage.getItem("accessToken");
 
+      // Check for accessToken in query parameters first
+      const urlParams = new URLSearchParams(window.location.search);
+      let accessToken = urlParams.get("accessToken");
+
+      // If no accessToken in query parameters, fall back to sessionStorage
+      if (!accessToken) {
+        accessToken = sessionStorage.getItem("accessToken");
+      }
+
+      // If no accessToken is found in either location
       if (!accessToken) {
         showErrorToast("Authentication required. Please log in.");
         setError("Please login to view dashboard.");
         setLoading(false);
         return;
+      }
+
+      // Store the accessToken in sessionStorage if it came from query parameters
+      if (urlParams.get("accessToken")) {
+        sessionStorage.setItem("accessToken", accessToken);
+        // Optionally, clear the accessToken from the URL to prevent exposure
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
 
       try {
@@ -232,7 +247,7 @@ const Dashboard = () => {
 
       } catch (err) {
         console.error("Fetch error:", err);
-        
+
         // Attempt to refresh token
         try {
           const refreshRes = await fetch(REFRESH_TOKEN_URL, {
@@ -247,7 +262,7 @@ const Dashboard = () => {
 
           const refreshResponse = await refreshRes.json();
           const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.accessToken;
-          
+
           if (newAccessToken) {
             sessionStorage.setItem("accessToken", newAccessToken);
             showSuccessToast("Session refreshed! Reloading data...");
@@ -273,7 +288,6 @@ const Dashboard = () => {
             await fetchSubscribers(newAccessToken);
 
             showSuccessToast("Data reloaded successfully!");
-
           } else {
             throw new Error("No new access token received");
           }

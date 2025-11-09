@@ -2,10 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
 import { BsCheckSquare, BsCheckSquareFill } from 'react-icons/bs';
 import { FaClock } from "react-icons/fa";
-import YouTube from 'react-youtube'; // ← Now imported
+import YouTube from 'react-youtube';
 import { Toaster, toast } from "react-hot-toast";
 
-// Simple encryption (base64 + char shift)
 const encrypt = (data) => {
   return btoa(
     String.fromCharCode(
@@ -38,12 +37,10 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
   const [player, setPlayer] = useState(null);
   const videoRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const [maxWatchedTime, setMaxWatchedTime] = useState(0); // UI only
+  const [maxWatchedTime, setMaxWatchedTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [title, setTitle] = useState(
-    initialData?.video?.title || 'Loading title...'
-  );
+  const [title, setTitle] = useState(initialData?.video?.title || 'Loading title...');
   const [views, setViews] = useState(0);
   const [likes, setLikes] = useState(0);
   const [liked, setLiked] = useState(false);
@@ -60,148 +57,135 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
   const totalPlayedTimeRef = useRef(0);
   const initialMaxRef = useRef(0);
   const skipAttempts = useRef(0);
-
-  // === [1] NEW REF: TRUE MAX WATCHED (HIGH-WATER MARK) ===
   const absoluteMaxWatchedRef = useRef(0);
-
-  // === [2] NEW REFS FOR PROGRESS BAR PROTECTION ===
+  const isNearEndRef = useRef(false); // New ref for end-of-video protection
   const ytIframeRef = useRef(null);
   const protectTimer = useRef(null);
   const protectObs = useRef(null);
 
-  // Control Overlay Refs
   const [showControls, setShowControls] = useState(false);
   const controlsTimeoutRef = useRef(null);
   const videoContainerRef = useRef(null);
   const isHoveringRef = useRef(false);
   const lastInteractionRef = useRef(Date.now());
 
-  // Duration fastforward or rewind Popups
   const [popup, setPopup] = useState({ show: false, type: 'rewind', count: 0, x: 0, y: 0, key: 0 });
   const popupTimeoutRef = useRef(null);
 
-  // Add new state
   const [isLiking, setIsLiking] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
 
-    // API endpoint
   const LIKE_API_URL = `https://exgeid-backend.onrender.com/api/v1/task/like/${initialData?.video?.videoId}`;
   const REFRESH_TOKEN_URL = "https://exgeid-backend.onrender.com/api/v1/refresh/token";
   const VERIFY_VIDEO_URL = "https://exgeid-backend.onrender.com/api/v1/task/verify/video";
 
-    // Toast Functions (same styling as Videos component)
   const showSuccessToast = (message) => {
     toast.success(message, {
-        position: "top-center",
-        style: {
+      position: "top-center",
+      style: {
         background: "#09052C",
         color: "#CACACA",
         border: "1px solid #FEC84D",
         zIndex: 9999,
-        },
-        iconTheme: {
+      },
+      iconTheme: {
         primary: "#FEC84D",
         secondary: "#09052C",
-        },
-        duration: 3000,
+      },
+      duration: 3000,
     });
   };
 
   const showErrorToast = (message) => {
     toast.error(message, {
-        position: "top-center",
-        style: {
+      position: "top-center",
+      style: {
         background: "#09052C",
         color: "#CACACA",
         border: "1px solid #ef4444",
         zIndex: 9999,
-        },
-        iconTheme: {
+      },
+      iconTheme: {
         primary: "#ef4444",
         secondary: "#09052C",
-        },
-        duration: 5000,
+      },
+      duration: 5000,
     });
   };
 
-  // Like video handler
   const handleLikeVideo = async () => {
     const accessToken = sessionStorage.getItem("accessToken");
     if (!accessToken) {
-        showErrorToast("Authentication required. Please log in.");
-        return;
+      showErrorToast("Authentication required. Please log in.");
+      return;
     }
 
     setIsLiking(true);
     try {
-        const res = await fetch(LIKE_API_URL, {
+      const res = await fetch(LIKE_API_URL, {
         method: "GET",
         headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
-        });
+      });
 
-        if (!res.ok) {
+      if (!res.ok) {
         if (res.status === 401) {
-            // Attempt token refresh
-            try {
+          try {
             const refreshRes = await fetch(REFRESH_TOKEN_URL, {
-                method: "GET",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
             });
 
             if (!refreshRes.ok) {
-                throw new Error(`Token refresh failed: ${refreshRes.status}`);
+              throw new Error(`Token refresh failed: ${refreshRes.status}`);
             }
 
             const refreshResponse = await refreshRes.json();
             const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.accessToken;
 
             if (newAccessToken) {
-                sessionStorage.setItem("accessToken", newAccessToken);
-
-                // Retry like request
-                const retryRes = await fetch(LIKE_API_URL, {
+              sessionStorage.setItem("accessToken", newAccessToken);
+              const retryRes = await fetch(LIKE_API_URL, {
                 method: "GET",
                 headers: {
-                    Authorization: `Bearer ${newAccessToken}`,
-                    "Content-Type": "application/json",
+                  Authorization: `Bearer ${newAccessToken}`,
+                  "Content-Type": "application/json",
                 },
-                });
+              });
 
-                if (!retryRes.ok) {
+              if (!retryRes.ok) {
                 throw new Error(`Retry like failed: ${retryRes.status}`);
-                }
+              }
 
-                setLiked(true);
-                setLikes(prev => prev + 1);
-                showSuccessToast("Video liked successfully!");
+              setLiked(true);
+              setLikes(prev => prev + 1);
+              showSuccessToast("Video liked successfully!");
             } else {
-                throw new Error("No new access token");
+              throw new Error("No new access token");
             }
-            } catch (refreshErr) {
+          } catch (refreshErr) {
             showErrorToast("Session expired. Please log in again.");
-            }
+          }
         } else {
-            const errorText = await res.text();
-            throw new Error(`Like request failed: ${res.status} - ${errorText}`);
+          const errorText = await res.text();
+          throw new Error(`Like request failed: ${res.status} - ${errorText}`);
         }
-        } else {
+      } else {
         setLiked(true);
         setLikes(prev => prev + 1);
         showSuccessToast("Video liked successfully!");
-        }
+      }
     } catch (err) {
-        console.error("Like error:", err);
-        showErrorToast("Failed to like video. Please try again.");
+      console.error("Like error:", err);
+      showErrorToast("Failed to like video. Please try again.");
     } finally {
-        setIsLiking(false);
+      setIsLiking(false);
     }
   };
 
-  // New handleMarkComplete function
   const handleMarkComplete = async () => {
     if (isMarkedComplete || isCompleting) return;
 
@@ -216,7 +200,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     const requestBody = {
       videoId: initialData?.video?.videoId,
       videoType: initialData?.video?.videoType || "youtube",
-      videoDuration: duration, // Already in seconds from parseDuration
+      videoDuration: duration,
       completed: isCompleted,
     };
 
@@ -236,7 +220,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
 
         if (!res.ok) {
           if (res.status === 401 && attempt < maxRetries - 1) {
-            // Attempt token refresh
             try {
               const refreshRes = await fetch(REFRESH_TOKEN_URL, {
                 method: "GET",
@@ -254,7 +237,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
               if (newAccessToken) {
                 sessionStorage.setItem("accessToken", newAccessToken);
                 attempt++;
-                continue; // Retry with new token
+                continue;
               } else {
                 throw new Error("No new access token");
               }
@@ -269,10 +252,9 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
           }
         }
 
-        // Success
         setIsMarkedComplete(true);
         showSuccessToast("Video marked as complete!");
-        break; // Exit retry loop
+        break;
 
       } catch (err) {
         console.error("Verify video error:", err);
@@ -281,7 +263,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
         }
         attempt++;
         if (attempt < maxRetries) {
-          // Exponential backoff: wait 1s, 2s, 4s
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         }
       }
@@ -292,7 +273,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
 
   const STORAGE_KEY = `video-progress-${initialData?.video?.videoId}`;
 
-  // === [3] HELPER: AGGRESSIVELY HIDE PROGRESS BAR ===
   const hideProgress = (el) => {
     if (!el) return;
     el.style.cssText = `
@@ -305,18 +285,17 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     `;
   };
 
-  // New helper to hide specific popups and buttons
   const hidePopups = (doc) => {
     if (!doc) return;
     const elementsToHide = [
-      '.ytp-popup', // General popup container
-      '.ytd-watch-later-button', // Watch Later button
-      '.ytd-share-button', // Share button
-      '.ytp-share-button', // Share popup trigger
-      '.ytp-watch-later-button', // Watch Later popup trigger
-      '.ytp-related-video-renderer', // More videos/related content
-      '.ytp-chrome-top .ytp-button[aria-label*="Share"]', // Share in top bar
-      '.ytp-chrome-top .ytp-button[aria-label*="Watch later"]', // Watch Later in top bar
+      '.ytp-popup',
+      '.ytd-watch-later-button',
+      '.ytd-share-button',
+      '.ytp-share-button',
+      '.ytp-watch-later-button',
+      '.ytp-related-video-renderer',
+      '.ytp-chrome-top .ytp-button[aria-label*="Share"]',
+      '.ytp-chrome-top .ytp-button[aria-label*="Watch later"]',
     ];
     elementsToHide.forEach(selector => {
       const els = doc.querySelectorAll(selector);
@@ -324,30 +303,28 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     });
   };
 
-  // Pop up Helpers
   const showPopup = (type, clientX, clientY) => {
     if (popupTimeoutRef.current) clearTimeout(popupTimeoutRef.current);
 
     const step = type === 'rewind' ? -10 : 10;
     const newCount = popup.show && popup.type === type
-        ? popup.count + step
-        : step;
+      ? popup.count + step
+      : step;
 
     setPopup({
-        show: true,
-        type,
-        count: newCount,
-        x: clientX,
-        y: clientY,
-        key: Date.now(),
+      show: true,
+      type,
+      count: newCount,
+      x: clientX,
+      y: clientY,
+      key: Date.now(),
     });
 
     popupTimeoutRef.current = setTimeout(() => {
-        setPopup(p => ({ ...p, show: false }));
+      setPopup(p => ({ ...p, show: false }));
     }, 1000);
   };
 
-  // Control Helpers
   const rewind10 = (e) => {
     const newTime = Math.max(0, getCurrentTime() - 10);
     seekTo(newTime);
@@ -356,9 +333,9 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
 
   const forward10 = (e) => {
     const newTime = getCurrentTime() + 10;
-    if (newTime <= absoluteMaxWatchedRef.current) { // ← Use absolute max
-        seekTo(newTime);
-        showPopup('forward', e.clientX, e.clientY);
+    if (newTime <= absoluteMaxWatchedRef.current) {
+      seekTo(newTime);
+      showPopup('forward', e.clientX, e.clientY);
     }
   };
 
@@ -367,22 +344,19 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     else pauseVideo();
   };
 
-  //reset timer helper
   const resetHideTimer = () => {
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
 
-    setShowControls(true); // Show controls on interaction
+    setShowControls(true);
     controlsTimeoutRef.current = setTimeout(() => {
-      // Hide controls if not paused
       if (!isPaused) {
         setShowControls(false);
       }
-    }, 2000); // 2 seconds
+    }, 2000);
   };
 
-  // 1. LOAD SAVED PROGRESS
   useEffect(() => {
     const saved = sessionStorage.getItem(STORAGE_KEY);
     const dec = decrypt(saved);
@@ -396,10 +370,9 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
       sessionStorage.removeItem(STORAGE_KEY);
     }
     initialMaxRef.current = loadedMax;
-    absoluteMaxWatchedRef.current = loadedMax; // ← Initialize absolute max
+    absoluteMaxWatchedRef.current = loadedMax;
   }, [initialData?.video?.videoId]);
 
-  // 2. SAVE PROGRESS (every 5s)
   useEffect(() => {
     if (isCompleted) {
       if (saveIntervalRef.current) clearInterval(saveIntervalRef.current);
@@ -411,7 +384,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
           STORAGE_KEY,
           encrypt({ 
             currentTime, 
-            maxWatchedTime: absoluteMaxWatchedRef.current, // ← Save absolute max
+            maxWatchedTime: absoluteMaxWatchedRef.current, 
             duration 
           })
         );
@@ -420,9 +393,8 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     return () => {
       if (saveIntervalRef.current) clearInterval(saveIntervalRef.current);
     };
-  }, [currentTime, duration, isCompleted]); // ← Removed maxWatchedTime from deps
+  }, [currentTime, duration, isCompleted]);
 
-  // Save on unmount
   useEffect(() => {
     return () => {
       if (!isCompleted && currentTime > 0) {
@@ -463,7 +435,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     };
   }, []);
 
-  // 3. INTEGRITY CHECK
   useEffect(() => {
     if (isCompleted) {
       if (integrityIntervalRef.current) clearInterval(integrityIntervalRef.current);
@@ -472,7 +443,12 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     integrityIntervalRef.current = setInterval(() => {
       if (!isCompleted && !isResetting.current) {
         const currentTotal = totalPlayedTimeRef.current + (playStartRef.current !== 0 ? (performance.now() - playStartRef.current) / 1000 : 0);
-        if (absoluteMaxWatchedRef.current > initialMaxRef.current + currentTotal + 5) {
+        if (absoluteMaxWatchedRef.current > initialMaxRef.current + currentTotal + 10) {
+          console.log('Integrity check failed:', {
+            absoluteMaxWatched: absoluteMaxWatchedRef.current,
+            initialMax: initialMaxRef.current,
+            currentTotal,
+          });
           isResetting.current = true;
           resetProgress();
         }
@@ -483,17 +459,15 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     };
   }, [isCompleted]);
 
-  // ---- SHOW CONTROLS ON PLAY, HIDE AFTER 2 SECONDS OF INACTIVITY ----
   useEffect(() => {
     if (isPaused) {
-      setShowControls(false); // Hide controls when paused
+      setShowControls(false);
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
       return;
     }
 
-    // Show controls on play
     setShowControls(true);
     resetHideTimer();
 
@@ -504,107 +478,95 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     };
   }, [isPaused]);
 
-  // Handle touch start for mobile
   const handleTouchStart = (e) => {
     e.stopPropagation();
     lastInteractionRef.current = Date.now();
-
-    // If paused, do nothing (play button will handle play)
     if (isPaused) {
       return;
     }
-
-    // If playing, show controls and reset timer
     setShowControls(true);
     resetHideTimer();
   };
 
-  // ---- click on video → show controls for 2 s ----
   const handleVideoClick = (e) => {
-    e.stopPropagation(); // Prevent bubbling to parent elements
+    e.stopPropagation();
     lastInteractionRef.current = Date.now();
-
-    // If the video is paused, do nothing here (play button handles play)
     if (isPaused) {
-      return; // Let the play button handle the play action
+      return;
     }
-
-    // If playing, show controls and reset timer
     setShowControls(true);
     resetHideTimer();
   };
 
-  //  // ---- mouse enter/leave (desktop) ----
   const handleMouseEnter = () => {
     if (isPaused) return;
     isHoveringRef.current = true;
     setShowControls(true);
-    resetHideTimer(); // Reset timer on mouse enter
+    resetHideTimer();
   };
   const handleMouseLeave = () => {
     isHoveringRef.current = false;
-    resetHideTimer(); // Reset timer on mouse enter
+    resetHideTimer();
   };
 
-  // 4. SEEK — BLOCK SKIP
   const seekTo = (seconds) => {
-    if (seconds > absoluteMaxWatchedRef.current + 1) return; // ← Use absolute max
     const p = getPlayer();
     if (!p) return;
+    if (seconds <= getCurrentTime()) {
+      p.seekTo(seconds);
+      return;
+    }
+    if (seconds > absoluteMaxWatchedRef.current + 1) return;
     p.seekTo(seconds);
   };
 
-  // 5. RESET PROGRESS
   const resetProgress = async () => {
     setCurrentTime(0);
     setMaxWatchedTime(0);
-    absoluteMaxWatchedRef.current = 0; // ← Reset absolute max
+    absoluteMaxWatchedRef.current = 0;
     sessionStorage.removeItem(STORAGE_KEY);
     await new Promise(r => setTimeout(r, 100));
     const p = getPlayer();
     if (p) seekTo(0);
-    alert('Invalid playback detected. Progress reset.');
+    showErrorToast('Invalid playback detected. Progress reset.');
     setTimeout(() => { isResetting.current = false; }, 3000);
     skipAttempts.current = 0;
   };
 
   const handleInvalidSeek = () => {
     skipAttempts.current++;
-    alert('Skipping not permitted');
-    if (skipAttempts.current >= 10) {
+    showErrorToast('Skipping not permitted');
+    if (skipAttempts.current >= 5) {
       resetProgress();
     }
   };
 
-  // 6. POLLING — CATCH SKIPS
   useEffect(() => {
-    if (isPaused || isCompleted || isResetting.current) return;
+    if (isPaused || isCompleted || isResetting.current || isNearEndRef.current) return;
     const id = setInterval(() => {
       const cur = getCurrentTime();
-      if (cur > absoluteMaxWatchedRef.current + 2) {
+      if (cur > absoluteMaxWatchedRef.current + 2 && cur > getCurrentTime()) {
         seekTo(absoluteMaxWatchedRef.current);
         handleInvalidSeek();
       } else if (cur > absoluteMaxWatchedRef.current) {
         absoluteMaxWatchedRef.current = cur;
-        setMaxWatchedTime(cur); // Update UI
+        setMaxWatchedTime(cur);
       }
     }, 200);
     return () => clearInterval(id);
   }, [isPaused, isCompleted, isResetting]);
 
-  // 7. ANTI-DEBUG
   useEffect(() => {
     const detect = () => {
       if (window.outerWidth - window.innerWidth > 160 || window.outerHeight - window.innerHeight > 160) {
         pauseVideo();
-        alert('Developer tools detected. Pausing for security.');
+        showErrorToast('Developer tools detected. Pausing for security.');
       }
     };
     window.addEventListener('resize', detect);
     return () => window.removeEventListener('resize', detect);
   }, []);
 
-  // 8. PLAYBACK RATE LOCK
   useEffect(() => {
     if (isCompleted) {
       if (rateIntervalRef.current) clearInterval(rateIntervalRef.current);
@@ -618,9 +580,9 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
           rateChangeCount.current += 1;
           if (rateChangeCount.current > 2) {
             resetProgress();
-            alert('Repeated speed changes detected. Session invalidated.');
+            showErrorToast('Repeated speed changes detected. Session invalidated.');
           } else {
-            alert('Playback speed must remain at 1x.');
+            showErrorToast('Playback speed must remain at 1x.');
           }
         }
       }
@@ -630,7 +592,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     };
   }, [isCompleted]);
 
-  // === [9] YOUTUBE: HIDE PROGRESS BAR ON LOAD ===
   useEffect(() => {
     const iframe = ytIframeRef.current;
     if (!iframe) return;
@@ -642,7 +603,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
       const container = doc.querySelector('.ytp-progress-bar-container');
       if (container) {
         hideProgress(container);
-        hidePopups(doc); // Hide popups on load
+        hidePopups(doc);
         clearInterval(waitForPlayer);
       }
     }, 200);
@@ -650,7 +611,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     return () => clearInterval(waitForPlayer);
   }, []);
 
-  // === [11] RE-APPLY PROTECTION EVERY 500ms ===
   useEffect(() => {
     const enforce = () => {
       const ytDoc = ytIframeRef.current?.contentDocument;
@@ -666,7 +626,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     };
   }, []);
 
-  // === [12] MUTATIONOBSERVER: RE-HIDE IF ADDED BACK ===
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((m) => {
@@ -709,7 +668,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     };
   }, []);
 
-  // 13. SET METADATA FROM initialData.video (NO API CALL)
   useEffect(() => {
     const video = initialData?.video;
     if (!video) return;
@@ -717,10 +675,9 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     setTitle(video.title || 'Untitled Video');
     setDuration(parseDuration(video.videoDuration));
     setLikes(video.likeCount || 0);
-    setViews(0); // No view count in API response
+    setViews(0);
   }, [initialData?.video]);
 
-  // 14. PLAYER HANDLERS
   const onReady = (e) => {
     setPlayer(e.target);
     ytIframeRef.current = e.target.getIframe();
@@ -736,9 +693,14 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
       setMaxWatchedTime(t);
     }
 
-    if (t >= duration - 1 && absoluteMaxWatchedRef.current >= duration - 1 && duration > 0) {
+    if (t >= duration - 2) {
+      isNearEndRef.current = true;
+    }
+
+    if (t >= duration - 0.5 && absoluteMaxWatchedRef.current >= duration - 0.5 && duration > 0) {
       setIsCompleted(true);
       clearAllIntervals();
+      handleMarkComplete();
     }
   };
 
@@ -775,7 +737,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
   const onSeeking = () => {
     setTimeout(() => {
       const attempted = getCurrentTime();
-      if (attempted > absoluteMaxWatchedRef.current + 2) {
+      if (attempted > absoluteMaxWatchedRef.current + 2 && attempted > getCurrentTime()) {
         seekTo(absoluteMaxWatchedRef.current);
         handleInvalidSeek();
       }
@@ -784,7 +746,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
 
   const onSeeked = () => {
     const cur = getCurrentTime();
-    if (cur > absoluteMaxWatchedRef.current + 2) {
+    if (cur > absoluteMaxWatchedRef.current + 2 && cur > getCurrentTime()) {
       seekTo(absoluteMaxWatchedRef.current);
       handleInvalidSeek();
     } else if (cur > absoluteMaxWatchedRef.current) {
@@ -793,7 +755,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     }
   };
 
-  // 15. HELPERS
   const getPlayer = () => player;
   const getCurrentTime = () => player?.getCurrentTime?.() || 0;
   const getPlaybackRate = () => player?.getPlaybackRate?.() || 1;
@@ -812,7 +773,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
   const shareVideo = async () => {
     const url = initialData?.video?.videoUrl || `https://www.youtube.com/watch?v=${initialData?.video?.videoId}`;
     try { await navigator.share({ title, text: 'Check out this video!', url }); }
-    catch { navigator.clipboard.writeText(url); alert('URL copied to clipboard!'); }
+    catch { navigator.clipboard.writeText(url); showErrorToast('URL copied to clipboard!'); }
   };
 
   const formatTime = (sec) => {
@@ -829,7 +790,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     return (parseInt(m?.[1]) * 3600 || 0) + (parseInt(m?.[2]) * 60 || 0) + (parseInt(m?.[3]) || 0);
   };
 
-  // RENDER
   return (
     <div
       className={`fixed inset-0 z-[9999] flex items-center justify-center bg-transparent bg-opacity-50 backdrop-blur-sm transition-opacity duration-300 ${
@@ -853,8 +813,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
         <div className="overflow-y-auto max-h-[95vh] px-6 md:px-12 lg:px-28 py-12">
           <main className="flex-1 p-0">
             <div className="max-w-full mx-auto relative">
-
-              {/* VIDEO PLAYER */}
               <div
                 ref={videoContainerRef}
                 className="bg-gray-700 relative"
@@ -874,6 +832,8 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
                       rel: 0,
                       fs: 1,
                       iv_load_policy: 3,
+                      loop: 0,
+                      playlist: initialData?.video?.videoId,
                     },
                   }}
                   onReady={onReady}
@@ -882,7 +842,15 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
                   onStateChange={(e) => {
                     if (e.data === 3) onSeeking();
                     if (e.data === 1 || e.data === 2) onSeeked();
-                    if (e.data === 0) onPause();
+                    if (e.data === 0) {
+                      if (absoluteMaxWatchedRef.current >= duration - 0.5) {
+                        setIsCompleted(true);
+                        clearAllIntervals();
+                        handleMarkComplete();
+                      } else {
+                        onPause();
+                      }
+                    }
                   }}
                   containerClassName="yt-progress-hider"
                   className="rounded pointer-events-none h-[50%] md:h-[315px]"
@@ -890,121 +858,127 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
                 {isPaused && (
                   <button
                     onClick={(e) => {
-                        e.stopPropagation();
-                        lastInteractionRef.current = Date.now();
-                        playVideo();
-                        resetHideTimer();
+                      e.stopPropagation();
+                      lastInteractionRef.current = Date.now();
+                      playVideo();
+                      resetHideTimer();
                     }}
                     className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-6xl opacity-50 hover:opacity-100"
                   >
-                     ▶
+                    ▶
                   </button>
                 )}
 
-                {/* NEW CONTROL OVERLAY */}
                 {showControls && !isPaused && (
-                    <div className="absolute inset-0 flex items-center justify-center gap-12 pointer-events-none bg-black/20">
-                        {/* -10 s */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                lastInteractionRef.current = Date.now();
-                                rewind10(e);
-                                resetHideTimer();
-                            }}
-                            className="pointer-events-auto bg-transparent backdrop-blur-lg bg-opacity-50 text-white rounded-full md:w-16 md:h-16 w-12 h-12 flex items-center justify-center text-3xl hover:bg-opacity-80 hover:scale-110 transition relative"
-                        >
-                            <span className="text-5xl">↺</span>
-                            <span className="absolute text-xs font-bold top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                                10
-                            </span>
-                        </button>
+                  <div className="absolute inset-0 flex items-center justify-center gap-12 pointer-events-none bg-black/20">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        lastInteractionRef.current = Date.now();
+                        rewind10(e);
+                        resetHideTimer();
+                      }}
+                      className="pointer-events-auto bg-transparent backdrop-blur-lg bg-opacity-50 text-white rounded-full md:w-16 md:h-16 w-12 h-12 flex items-center justify-center text-3xl hover:bg-opacity-80 hover:scale-110 transition relative"
+                    >
+                      <span className="text-5xl">↺</span>
+                      <span className="absolute text-xs font-bold top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                        10
+                      </span>
+                    </button>
 
-                        {/* PAUSE */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                lastInteractionRef.current = Date.now();
-                                togglePauseFromOverlay();
-                                resetHideTimer();
-                            }}
-                            className="pointer-events-auto bg-transparent backdrop-blur-lg bg-opacity-50 text-white rounded-full md:w-20 md:h-20 w-16 h-16 flex items-center justify-center text-4xl hover:bg-opacity-80 hover:scale-110 transition relative"
-                        >
-                            ⏸
-                        </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        lastInteractionRef.current = Date.now();
+                        togglePauseFromOverlay();
+                        resetHideTimer();
+                      }}
+                      className="pointer-events-auto bg-transparent backdrop-blur-lg bg-opacity-50 text-white rounded-full md:w-20 md:h-20 w-16 h-16 flex items-center justify-center text-4xl hover:bg-opacity-80 hover:scale-110 transition relative"
+                    >
+                      ⏸
+                    </button>
 
-                        {/* +10 s */}
-                        {getCurrentTime() + 10 <= absoluteMaxWatchedRef.current ? (
-                            <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                lastInteractionRef.current = Date.now();
-                                forward10(e);
-                                resetHideTimer();
-                            }}
-                            className="pointer-events-auto bg-transparent backdrop-blur-lg bg-opacity-50 text-white rounded-full md:w-16 md:h-16 w-12 h-12 flex items-center justify-center text-3xl hover:bg-opacity-80 hover:scale-110 transition relative"
-                            >
-                                <span className="text-5xl">↻</span>
-                                <span className="absolute text-xs font-bold top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                                10
-                                </span>
-                            </button>
-                        ) : (<div className='md:w-16 md:h-16 w-12 h-12'></div>)}
-                        
-                        {popup.show && (
-                            <div
-                                key={popup.key}
-                                className="fixed pointer-events-none transition-all duration-1000 ease-out z-[9999]"
-                                style={{
-                                left: `${popup.x}`,
-                                top: `${popup.y}`,
-                                transform: 'translate(-50%, -50%)',
-                                }}
-                            >
-                                <div
-                                className={`
-                                    px-3 py-1 mb-6 rounded-full text-white font-bold text-lg shadow-lg
-                                    ${popup.show ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}
-                                    ${popup.type === 'rewind' ? 'text-red-600' : 'text-green-600'}
-                                `}
-                                >
-                                {popup.count > 0 ? `+${popup.count}s` : `${popup.count}s`}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    {getCurrentTime() + 10 <= absoluteMaxWatchedRef.current ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          lastInteractionRef.current = Date.now();
+                          forward10(e);
+                          resetHideTimer();
+                        }}
+                        className="pointer-events-auto bg-transparent backdrop-blur-lg bg-opacity-50 text-white rounded-full md:w-16 md:h-16 w-12 h-12 flex items-center justify-center text-3xl hover:bg-opacity-80 hover:scale-110 transition relative"
+                      >
+                        <span className="text-5xl">↻</span>
+                        <span className="absolute text-xs font-bold top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                          10
+                        </span>
+                      </button>
+                    ) : (<div className='md:w-16 md:h-16 w-12 h-12'></div>)}
+
+                    {popup.show && (
+                      <div
+                        key={popup.key}
+                        className="fixed pointer-events-none transition-all duration-1000 ease-out z-[9999]"
+                        style={{
+                          left: `${popup.x}`,
+                          top: `${popup.y}`,
+                          transform: 'translate(-50%, -50%)',
+                        }}
+                      >
+                        <div
+                          className={`
+                            px-3 py-1 mb-6 rounded-full text-white font-bold text-lg shadow-lg
+                            ${popup.show ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}
+                            ${popup.type === 'rewind' ? 'text-red-600' : 'text-green-600'}
+                          `}
+                        >
+                          {popup.count > 0 ? `+${popup.count}s` : `${popup.count}s`}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
-              {/* CUSTOM PROGRESS BAR */}
               <div className="mt-4 relative h-8">
                 <div className="absolute inset-x-0 top-3 h-2 mt-4 bg-gray-800 rounded-full overflow-hidden">
                   <div
-                    className="absolute top-0 left-0 h-full bg-green-500 opacity-30 transition-all duration-300"
+                    className={`absolute top-0 left-0 h-full bg-green-500 opacity-30 transition-all duration-300 ${
+                      isCompleted ? 'animate-pulse' : ''
+                    }`}
                     style={{ width: duration ? `${(absoluteMaxWatchedRef.current / duration) * 100}%` : '0%' }}
                   />
                   <div
-                    className="absolute top-0 left-0 h-full bg-green-500 transition-all duration-300"
-                    style={{ width: duration ? `${(currentTime / duration) * 100}%` : '0%' }}
+                    className={`absolute top-0 left-0 h-full bg-green-500 transition-all duration-300 ${
+                      isCompleted ? 'animate-pulse' : ''
+                    }`}
+                    style={{ width: duration ? `${(isCompleted ? duration : currentTime) / duration * 100}%` : '0%' }}
                   />
                 </div>
 
                 <div
                   className="absolute top-6 left-0 w-4 h-4 bg-white rounded-full shadow-lg transition-all duration-300 pointer-events-none"
                   style={{
-                    left: `calc(${duration ? (currentTime / duration) * 100 : 0}% - 10px)`,
+                    left: `calc(${duration ? (isCompleted ? 100 : (currentTime / duration) * 100) : 0}% - 10px)`,
                     display: duration ? 'block' : 'none',
                   }}
                 />
 
                 <div className="flex justify-between text-xs text-[#CACACA] mt-6">
-                  <span>{formatTime(currentTime)}</span>
+                  <span>{formatTime(isCompleted ? duration : currentTime)}</span>
                   <span>{formatTime(duration)}</span>
                 </div>
               </div>
 
-              {/* HIDE PROGRESS BARS (fallback) */}
               <style jsx>{`
+                .animate-pulse {
+                  animation: pulse 1.5s ease-in-out infinite;
+                }
+                @keyframes pulse {
+                  0% { opacity: 0.3; }
+                  50% { opacity: 0.6; }
+                  100% { opacity: 0.3; }
+                }
                 .yt-progress-hider .ytp-progress-bar-container,
                 .yt-progress-hider .ytp-progress-bar,
                 .yt-progress-hider .ytp-load-progress,
@@ -1015,87 +989,85 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
               `}</style>
 
               <div className='grid grid-cols-2 gap-4'>
-                {/* TOGGLE PAUSE AND PLAY */}
                 {isPaused ? (
-                    <button
-                        onClick={playVideo}
-                        className="w-full bg-[#8F0406] hover:bg-red-700 hover:scale-110 text-white lg:text-[16px] md:text-[13.58px] text-[10.18px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition mt-6 md:mt-12"
-                    >
+                  <button
+                    onClick={playVideo}
+                    className="w-full bg-[#8F0406] hover:bg-red-700 hover:scale-110 text-white lg:text-[16px] md:text-[13.58px] text-[10.18px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition mt-6 md:mt-12"
+                  >
                     <span aria-hidden="true" className="mr-2">▶</span> Play Video
-                    </button>
+                  </button>
                 ) : (
-                    <button
-                        onClick={pauseVideo}
-                        className="w-full bg-[#8F0406] hover:bg-red-700 hover:scale-110 text-white lg:text-[16px] md:text-[13.58px] text-[10.18px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition mt-6 md:mt-12"
-                    >
+                  <button
+                    onClick={pauseVideo}
+                    className="w-full bg-[#8F0406] hover:bg-red-700 hover:scale-110 text-white lg:text-[16px] md:text-[13.58px] text-[10.18px] font-semibold py-2 md:py-4 rounded-lg mb-4 transition mt-6 md:mt-12"
+                  >
                     <span aria-hidden="true" className="mr-2">⏸</span> Pause Video
-                    </button>
+                  </button>
                 )}
                 <button
-                    onClick={handleLikeVideo}
-                    disabled={isLiking || liked}
-                    className={`
-                        border-2 font-bold 
-                        transition-all duration-300 ease-in-out 
-                        lg:px-4 md:px-3 px-2 
-                        py-2
-                        rounded-md mb-4 transition mt-6 md:mt-12 
-                        lg:text-[16px] md:text-[13.58px] text-[10.18px]
-                        flex items-center justify-center gap-2
-                        relative
-                        ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}
-                        ${
-                            liked
-                            ? 'bg-[#FEC84D] font-bold text-[#1A202C] cursor-not-allowed'
-                            : 'border-[#FEC84D] text-[#FEC84D] hover:bg-yellow-900 hover:text-white hover:scale-105 '
-                        }
-                    `}
+                  onClick={handleLikeVideo}
+                  disabled={isLiking || liked}
+                  className={`
+                    border-2 font-bold 
+                    transition-all duration-300 ease-in-out 
+                    lg:px-4 md:px-3 px-2 
+                    py-2
+                    rounded-md mb-4 transition mt-6 md:mt-12 
+                    lg:text-[16px] md:text-[13.58px] text-[10.18px]
+                    flex items-center justify-center gap-2
+                    relative
+                    ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}
+                    ${
+                      liked
+                      ? 'bg-[#FEC84D] font-bold text-[#1A202C] cursor-not-allowed'
+                      : 'border-[#FEC84D] text-[#FEC84D] hover:bg-yellow-900 hover:text-white hover:scale-105 '
+                    }
+                  `}
                 >
-                    {isLiking ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#FEC84D]"></div>
-                    ) : liked ? (
-                        <>
-                            <AiFillHeart className="text-lg" />
-                            Liked
-                        </>
-                    ) : (
-                        <>
-                            <AiOutlineHeart className="text-lg" />
-                            Like
-                        </>
-                    )}
+                  {isLiking ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#FEC84D]"></div>
+                  ) : liked ? (
+                    <>
+                      <AiFillHeart className="text-lg" />
+                      Liked
+                    </>
+                  ) : (
+                    <>
+                      <AiOutlineHeart className="text-lg" />
+                      Like
+                    </>
+                  )}
                 </button>
               </div>
 
-              {/* MARK AS COMPLETE BUTTON - FULL WIDTH */}
               {isCompleted && liked && (
                 <button
-                    onClick={handleMarkComplete}
-                    disabled={isMarkedComplete || isCompleting}
-                    className={`
+                  onClick={handleMarkComplete}
+                  disabled={isMarkedComplete || isCompleting}
+                  className={`
                     w-full mt-2 mb-4 py-3 md:py-4 rounded-lg font-bold md:text-lg text-[12px]
                     flex items-center justify-center gap-2 transition-all duration-300
                     ${isMarkedComplete
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : isCompleting
-                        ? 'bg-gray-600 text-white cursor-not-allowed'
-                        : 'border-2 border-[#FEC84D] text-[#FEC84D] hover:bg-yellow-900 hover:text-white'
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : isCompleting
+                      ? 'bg-gray-600 text-white cursor-not-allowed'
+                      : 'border-2 border-[#FEC84D] text-[#FEC84D] hover:bg-yellow-900 hover:text-white'
                     }
-                    `}
+                  `}
                 >
-                    {isCompleting ? (
+                  {isCompleting ? (
                     <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#FEC84D]"></div>
-                    ) : isMarkedComplete ? (
+                  ) : isMarkedComplete ? (
                     <>
-                        <BsCheckSquareFill className="md:text-xl text-lg text-white" />
-                        Completed
+                      <BsCheckSquareFill className="md:text-xl text-lg text-white" />
+                      Completed
                     </>
-                    ) : (
+                  ) : (
                     <>
-                        <BsCheckSquare className="md:text-xl text-lg" />
-                        Mark as Complete
+                      <BsCheckSquare className="md:text-xl text-lg" />
+                      Mark as Complete
                     </>
-                    )}
+                  )}
                 </button>
               )}
               <h2 className="lg:text-[24px] md:text-[20px] text-[14px] font-bold text-[#CACACA] mb-4 text-center">
