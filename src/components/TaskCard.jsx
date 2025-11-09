@@ -1,10 +1,11 @@
 import { useContext, useState } from 'react';
-import { FaClock, FaSpinner } from "react-icons/fa";
+import { FaClock, FaSpinner, FaCheck, FaVideo } from "react-icons/fa";
 import ModalContext from "../utils/ModalContext";
 
 const TaskCard = ({ title, progress, earnings, due, taskType, taskData, showSuccessToast, showErrorToast }) => {
   const { openModal } = useContext(ModalContext);
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   const SUBSCRIBE_API_URL = "https://exgeid-backend.onrender.com/api/v1/task/subscribe/account";
   const REFRESH_TOKEN_URL = "https://exgeid-backend.onrender.com/api/v1/refresh/token";
@@ -41,6 +42,7 @@ const TaskCard = ({ title, progress, earnings, due, taskType, taskData, showSucc
       }
 
       showSuccessToast("Successfully subscribed to channel!");
+      setIsSubscribed(true);
 
     } catch (err) {
       console.error("Subscription error:", err);
@@ -81,6 +83,7 @@ const TaskCard = ({ title, progress, earnings, due, taskType, taskData, showSucc
           }
 
           showSuccessToast("Successfully subscribed after session refresh!");
+          setIsSubscribed(true);
         } else {
           throw new Error("No new access token");
         }
@@ -124,18 +127,35 @@ const TaskCard = ({ title, progress, earnings, due, taskType, taskData, showSucc
         {/* Button */}
         <button
           onClick={handleButtonClick}
-          className={`bg-[#8F0406] px-4 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2 ${
-            isSubscribing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'
+          className={`bg-green-600 px-4 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2 ${
+            isSubscribing || isSubscribed ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'
           } transition-all`}
-          disabled={isSubscribing}
+          disabled={isSubscribing || isSubscribed}
         >
           {isSubscribing ? (
             <>
               <FaSpinner className="animate-spin text-yellow-400" />
               Subscribing...
             </>
+          ) : isSubscribed ? (
+            <>
+              <FaCheck className="text-white" />
+              Completed
+            </>
           ) : (
-            taskType === 'video' ? 'Watch Video' : 'Subscribe'
+            <>
+              {taskType === 'video' ? (
+                <>
+                  <FaVideo className="ml-2" />
+                  'Watch Video'
+                </>
+              ) : (
+                <>
+                  <FaCheck className="text-white" />
+                  Subscribe
+                </>
+              )}
+            </>
           )}
         </button>
       </div>
