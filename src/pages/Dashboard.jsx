@@ -881,7 +881,7 @@ const Dashboard = () => {
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-200 to-red-300 flex items-center justify-center font-bold text-[#ef4444] text-sm overflow-hidden">
                             {getInitials(sub.userName)}
                           </div>
-                          <span className="font-medium text-[12px] md:text-[14px]">{sub.fullName}</span>
+                          <span className="font-medium text-[12px] md:text-[14px]">{sub.userName}</span>
                         </div>
                         <div className="text-yellow-400 font-semibold text-[12px] md:text-[14px]">
                           ₦{Number(sub.amount).toLocaleString()}
