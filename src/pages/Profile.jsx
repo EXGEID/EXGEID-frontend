@@ -671,7 +671,7 @@ const Profile = () => {
                 <div>
                   <p className="text-sm text-gray-400">Number of Points Gained</p>
                   <p className="font-bold text-lg mt-1 text-white">
-                    {pointsData.totalLevelPoint || 0}
+                    {pointsData.totalDayPoint || 0}
                   </p>
                 </div>
               </div>
