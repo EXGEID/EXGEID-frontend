@@ -127,8 +127,8 @@ const TaskCard = ({ title, progress, earnings, due, taskType, taskData, showSucc
         {/* Button */}
         <button
           onClick={handleButtonClick}
-          className={`bg-green-600 px-4 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2 ${
-            isSubscribing || isSubscribed ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'
+          className={`bg-[#8F0406] px-4 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2 ${
+            isSubscribing ? 'opacity-50 cursor-not-allowed' : isSubscribed ? 'opacity-50 cursor-not-allowed bg-green-600' : 'hover:bg-red-700'
           } transition-all`}
           disabled={isSubscribing || isSubscribed}
         >
@@ -146,12 +146,11 @@ const TaskCard = ({ title, progress, earnings, due, taskType, taskData, showSucc
             <>
               {taskType === 'video' ? (
                 <>
-                  <FaVideo className="ml-2" />
+                  <FaVideo className="mr-2" />
                   'Watch Video'
                 </>
               ) : (
                 <>
-                  <FaCheck className="text-white" />
                   Subscribe
                 </>
               )}
