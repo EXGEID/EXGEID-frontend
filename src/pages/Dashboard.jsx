@@ -252,7 +252,10 @@ const Dashboard = () => {
         try {
           const refreshRes = await fetch(REFRESH_TOKEN_URL, {
             method: "GET",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
             credentials: "include",
           });
 
@@ -570,7 +573,7 @@ const Dashboard = () => {
 
                 <div className="mt-8 text-center">
                   <p className="text-[14px] lg:text-[17.5px] font-medium">
-                    You are currently on Level {dataSource?.userProfileData?.level} with {dataSource?.pointsData?.totalDayPoint} points
+                    You are currently on Level {dataSource?.userProfileData?.level} with {dataSource.pointsData?.totalDayPoint + dataSource.pointsData?.pendingPoints} points out of {dataSource.pointsData?.totalLevelPoint}
                   </p>
                 </div>
 
@@ -614,9 +617,9 @@ const Dashboard = () => {
               <div className="relative z-10">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-[12px] md:text-[15px] font-semibold">Total Earnings</h3>
+                    <h3 className="text-[12px] md:text-[15px] font-semibold">Total Earnings <span className="text-yellow-400">(to be won)</span></h3>
                     <p className="text-[15px] md:text-[19px] font-bold text-yellow-400">
-                      ₦{(dataSource.userWalletData?.amountLeftInWallet).toLocaleString()}
+                      ₦{(dataSource.userWalletData?.approvedAmount).toLocaleString()}
                     </p>
                   </div>
                   <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center">
@@ -629,7 +632,7 @@ const Dashboard = () => {
                     <div className="min-w-[120px]">
                       <div className="font-bold text-[#CACACA] mt-2">Earned Points</div>
                       <div className="font-semibold text-[#B5B5B5] mt-2">
-                        {(dataSource.pointsData?.totalDayPoint).toLocaleString()} points
+                        {(dataSource.pointsData?.totalDayPoint + dataSource.pointsData?.pendingPoints).toLocaleString()} points
                       </div>
                     </div>
                     <FaSyncAlt className="text-white text-lg" />

@@ -99,7 +99,10 @@ const Videos = () => {
       try {
         const refreshRes = await fetch(REFRESH_TOKEN_URL, {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
           credentials: "include",
         });
 

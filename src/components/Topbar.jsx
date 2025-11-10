@@ -127,13 +127,14 @@ const Topbar = () => {
       }
     };
 
-    const attemptTokenRefresh = async () => {
+    const attemptTokenRefresh = async (accessToken) => {
       try {
         console.log("Attempting to refresh token...");
         const refreshRes = await fetch(REFRESH_TOKEN_URL, {
           method: "GET",
           credentials: "include",
           headers: {
+            Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
         });
@@ -204,7 +205,7 @@ const Topbar = () => {
       } catch (err) {
         // Attempt token refresh only for auth-related errors
         if (err.message.includes("401") || err.message.includes("403")) {
-          await attemptTokenRefresh();
+          await attemptTokenRefresh(accessToken);
         }
       }
     };

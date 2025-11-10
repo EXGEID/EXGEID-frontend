@@ -135,7 +135,10 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
           try {
             const refreshRes = await fetch(REFRESH_TOKEN_URL, {
               method: "GET",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
               credentials: "include",
             });
 
@@ -201,7 +204,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
       videoId: initialData?.video?.videoId,
       videoType: initialData?.video?.videoType || "youtube",
       videoDuration: duration,
-      completed: isCompleted,
+      completed: true,
     };
 
     const maxRetries = 3;
@@ -223,7 +226,10 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
             try {
               const refreshRes = await fetch(REFRESH_TOKEN_URL, {
                 method: "GET",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
               });
 

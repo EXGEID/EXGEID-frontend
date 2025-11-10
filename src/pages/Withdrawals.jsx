@@ -83,11 +83,14 @@ const Withdrawals = () => {
   };
 
   // Refresh token function
-  const refreshAccessToken = async () => {
+  const refreshAccessToken = async (accessToken) => {
     try {
       const refreshRes = await fetch(REFRESH_TOKEN_URL, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
         credentials: 'include',
       });
 
@@ -206,7 +209,7 @@ const Withdrawals = () => {
       // Only retry on 401 Unauthorized
       if (err.message.includes('401')) {
         try {
-          const newAccessToken = await refreshAccessToken();
+          const newAccessToken = await refreshAccessToken(accessToken);
 
           // Retry all API calls with new token
           const retryBankCardRes = await fetch(BANK_CARD_API_URL, {
@@ -500,10 +503,10 @@ const Withdrawals = () => {
                   {bankCardInfo.name.toUpperCase()}
                 </p>
               </div>
-              <div>
+              {/*<div>
                 <p className="text-gray-400 text-xs sm:text-sm">Bank Code</p>
                 <p className="font-semibold text-white text-sm sm:text-base">{bankCardInfo.bank_code}</p>
-              </div>
+              </div>*/}
               <img
                 src={mastercard}
                 alt="mastercard_logo"

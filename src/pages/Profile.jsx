@@ -3,6 +3,8 @@ import { FaEdit, FaSave, FaTimes } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
 import angelVid from "../assets/angelVid.png";
 import { useNavigate } from "react-router-dom";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css'; // Required for PhoneInput styling
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
@@ -94,9 +96,13 @@ const Profile = () => {
 
   const refreshAndRetry = async (url, options) => {
     try {
+      const accessToken = sessionStorage.getItem("accessToken");
       const refreshRes = await fetch(REFRESH_TOKEN_URL, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`, // Added Authorization header
+        },
         credentials: "include",
       });
 
@@ -513,18 +519,29 @@ const Profile = () => {
                 </div>
                 <div>
                   <label className="text-sm text-gray-400 block mb-1 font-medium">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={isEditing ? editData.phoneNumber : personalDetails?.phoneNumber || ""}
-                    onChange={(e) => setEditData({...editData, phoneNumber: e.target.value})}
-                    readOnly={!isEditing}
-                    disabled={!isEditing}
-                    className={`w-full bg-[#020109] p-3 rounded-md mt-1 border transition-all text-white focus:outline-none ${
-                      isEditing 
-                        ? "border-[#C60508] focus:border-red-400 focus:ring-2 focus:ring-[#C60508]" 
-                        : "border-transparent bg-opacity-70"
-                    }`}
-                  />
+                  {isEditing ? (
+                    <PhoneInput
+                      country={'ng'} // Set default country to Nigeria
+                      value={editData.phoneNumber}
+                      onChange={(phone) => setEditData({ ...editData, phoneNumber: phone })}
+                      inputClass={`w-full bg-[#020109] p-3 rounded-md mt-1 border transition-all text-white focus:outline-none ${
+                        isEditing 
+                          ? "border-[#C60508] focus:border-red-400 focus:ring-2 focus:ring-[#C60508]" 
+                          : "border-transparent bg-opacity-70"
+                      }`}
+                      containerClass="w-full"
+                      buttonClass="bg-[#020109] border-[#C60508]"
+                      dropdownClass="bg-[#020109] text-white"
+                    />
+                  ) : (
+                    <input
+                      type="tel"
+                      value={personalDetails?.phoneNumber || ""}
+                      readOnly
+                      disabled
+                      className="w-full bg-[#020109] p-3 rounded-md mt-1 border border-transparent bg-opacity-70 text-white"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="text-sm text-gray-400 block mb-1 font-medium">Email</label>
@@ -669,9 +686,9 @@ const Profile = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Number of Points Gained</p>
+                  <p className="text-sm text-gray-400">Points Gained</p>
                   <p className="font-bold text-lg mt-1 text-white">
-                    {pointsData.totalDayPoint || 0}
+                    {pointsData.totalDayPoint + pointsData.pendingPoints || 0}
                   </p>
                 </div>
               </div>
