@@ -111,7 +111,7 @@ const Profile = () => {
       }
 
       const refreshResponse = await refreshRes.json();
-      const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.accessToken;
+      const newAccessToken = refreshResponse.data;
       
       if (!newAccessToken) {
         throw new Error("No new access token received");
@@ -521,17 +521,36 @@ const Profile = () => {
                   <label className="text-sm text-gray-400 block mb-1 font-medium">Phone Number</label>
                   {isEditing ? (
                     <PhoneInput
-                      country={'ng'} // Set default country to Nigeria
+                      country={'ng'}
                       value={editData.phoneNumber}
                       onChange={(phone) => setEditData({ ...editData, phoneNumber: phone })}
+                      placeholder="Edit phone number"
+                      className="w-full font-regular md:text-[16px] text-[12px]"
+                      inputStyle={{
+                        width: '100%',
+                        background: '#020109',
+                        color: 'white',
+                        padding: '0.75rem 1rem 0.75rem 3.5rem',
+                        height: '2.75rem',
+                        borderRadius: '0.375rem',
+                        border: '1px solid #f00e0eff',
+                        lineHeight: '1rem',
+                      }}
                       inputClass={`w-full bg-[#020109] p-3 rounded-md mt-1 border transition-all text-white focus:outline-none ${
                         isEditing 
                           ? "border-[#C60508] focus:border-red-400 focus:ring-2 focus:ring-[#C60508]" 
                           : "border-transparent bg-opacity-70"
                       }`}
-                      containerClass="w-full"
-                      buttonClass="bg-[#020109] border-[#C60508]"
-                      dropdownClass="bg-[#020109] text-white"
+                      buttonStyle={{
+                        background: '#020109',
+                        border: '1px solid #f00e0eff',
+                        borderRadius: '0.375rem 0 0 0.375rem',
+                        paddingLeft: '0.5rem',
+                      }}
+                      dropdownStyle={{
+                        background: '#020109',
+                        color: '#CACACA',
+                      }}
                     />
                   ) : (
                     <input

@@ -111,7 +111,7 @@ const Videos = () => {
         }
 
         const refreshResponse = await refreshRes.json();
-        const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.accessToken;
+        const newAccessToken = refreshResponse.data;
 
         if (newAccessToken) {
           sessionStorage.setItem("accessToken", newAccessToken);

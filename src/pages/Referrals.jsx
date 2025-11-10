@@ -125,7 +125,7 @@ const Referrals = () => {
         if (!refreshRes.ok) throw new Error("Token refresh failed");
 
         const refreshResponse = await refreshRes.json();
-        const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.accessToken;
+        const newAccessToken = refreshResponse.data;
 
         if (!newAccessToken) throw new Error("No new access token");
 

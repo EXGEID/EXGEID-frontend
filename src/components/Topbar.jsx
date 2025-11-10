@@ -144,7 +144,7 @@ const Topbar = () => {
         }
 
         const refreshData = await refreshRes.json();
-        const { accessToken: newAccessToken } = refreshData;
+        const { data: newAccessToken } = refreshData;
         
         if (!newAccessToken) {
           throw new Error("No new access token received");
