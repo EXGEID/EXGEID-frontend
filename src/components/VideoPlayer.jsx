@@ -58,13 +58,11 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
   const initialMaxRef = useRef(0);
   const skipAttempts = useRef(0);
   const absoluteMaxWatchedRef = useRef(0);
-  const isNearEndRef = useRef(false);
-  const lastRewindRef = useRef(0); // New ref for rewind timestamp
+  const isNearEndRef = useRef(false); // New ref for end-of-video protection
   const ytIframeRef = useRef(null);
   const protectTimer = useRef(null);
   const protectObs = useRef(null);
 
- Us
   const [showControls, setShowControls] = useState(false);
   const controlsTimeoutRef = useRef(null);
   const videoContainerRef = useRef(null);
@@ -76,19 +74,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
 
   const [isLiking, setIsLiking] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
-
-  // Debounced setCurrentTime
-  const debouncedSetCurrentTime = useRef(
-    (() => {
-      let timeout;
-      return (value) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-          setCurrentTime(value);
-        }, 100);
-      };
-    })()
-  );
 
   const LIKE_API_URL = `https://exgeid-backend.onrender.com/api/v1/task/like/${initialData?.video?.videoId}`;
   const REFRESH_TOKEN_URL = "https://exgeid-backend.onrender.com/api/v1/refresh/token";
@@ -150,7 +135,10 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
           try {
             const refreshRes = await fetch(REFRESH_TOKEN_URL, {
               method: "GET",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
               credentials: "include",
             });
 
@@ -159,7 +147,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
             }
 
             const refreshResponse = await refreshRes.json();
-            const newAccessToken = refreshResponse.data;
+            const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.accessToken;
 
             if (newAccessToken) {
               sessionStorage.setItem("accessToken", newAccessToken);
@@ -250,7 +238,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
               }
 
               const refreshResponse = await refreshRes.json();
-              const newAccessToken = refreshResponse.data;
+              const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.accessToken;
 
               if (newAccessToken) {
                 sessionStorage.setItem("accessToken", newAccessToken);
@@ -345,7 +333,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
 
   const rewind10 = (e) => {
     const newTime = Math.max(0, getCurrentTime() - 10);
-    lastRewindRef.current = performance.now();
     seekTo(newTime);
     showPopup('rewind', e.clientX, e.clientY);
   };
@@ -461,19 +448,15 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     }
     integrityIntervalRef.current = setInterval(() => {
       if (!isCompleted && !isResetting.current) {
-        const now = performance.now();
-        if (lastRewindRef.current && (now - lastRewindRef.current) / 1000 < 5) return;
-        const currentTotal = totalPlayedTimeRef.current + (playStartRef.current !== 0 ? (now - playStartRef.current) / 1000 : 0);
-        const currentTime = getCurrentTime();
-        if (currentTime > absoluteMaxWatchedRef.current + 10 && currentTime > initialMaxRef.current + currentTotal + 10) {
+        const currentTotal = totalPlayedTimeRef.current + (playStartRef.current !== 0 ? (performance.now() - playStartRef.current) / 1000 : 0);
+        if (absoluteMaxWatchedRef.current > initialMaxRef.current + currentTotal + 10) {
           console.log('Integrity check failed:', {
             absoluteMaxWatched: absoluteMaxWatchedRef.current,
             initialMax: initialMaxRef.current,
             currentTotal,
-            currentTime,
           });
           isResetting.current = true;
-          resetProgress(true);
+          resetProgress();
         }
       }
     }, 2000);
@@ -532,48 +515,35 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     resetHideTimer();
   };
 
-  const seekTo = async (seconds) => {
+  const seekTo = (seconds) => {
     const p = getPlayer();
     if (!p) return;
-    try {
-      if (seconds <= getCurrentTime()) {
-        await new Promise(r => setTimeout(r, 50));
-        p.seekTo(seconds);
-        return;
-      }
-      if (seconds > absoluteMaxWatchedRef.current + 1) return;
-      await new Promise(r => setTimeout(r, 50));
+    if (seconds <= getCurrentTime()) {
       p.seekTo(seconds);
-    } catch (err) {
-      console.error('Seek error:', err);
-      showErrorToast('Error seeking video. Please try again.');
+      return;
     }
+    if (seconds > absoluteMaxWatchedRef.current + 1) return;
+    p.seekTo(seconds);
   };
 
-  const resetProgress = async (isSkip = false) => {
-    pauseVideo();
-    clearAllIntervals();
+  const resetProgress = async () => {
     setCurrentTime(0);
     setMaxWatchedTime(0);
-    if (isSkip) {
-      absoluteMaxWatchedRef.current = 0;
-      sessionStorage.removeItem(STORAGE_KEY);
-    }
+    absoluteMaxWatchedRef.current = 0;
+    sessionStorage.removeItem(STORAGE_KEY);
     await new Promise(r => setTimeout(r, 100));
     const p = getPlayer();
-    if (p) p.seekTo(0);
+    if (p) seekTo(0);
     showErrorToast('Invalid playback detected. Progress reset.');
     setTimeout(() => { isResetting.current = false; }, 3000);
     skipAttempts.current = 0;
-    lastRewindRef.current = 0;
-    isNearEndRef.current = false;
   };
 
   const handleInvalidSeek = () => {
     skipAttempts.current++;
     showErrorToast('Skipping not permitted');
     if (skipAttempts.current >= 5) {
-      resetProgress(true);
+      resetProgress();
     }
   };
 
@@ -581,7 +551,6 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
     if (isPaused || isCompleted || isResetting.current || isNearEndRef.current) return;
     const id = setInterval(() => {
       const cur = getCurrentTime();
-      if (lastRewindRef.current && (performance.now() - lastRewindRef.current) / 1000 < 5) return;
       if (cur > absoluteMaxWatchedRef.current + 2 && cur > getCurrentTime()) {
         seekTo(absoluteMaxWatchedRef.current);
         handleInvalidSeek();
@@ -616,7 +585,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
           setPlaybackRate(1);
           rateChangeCount.current += 1;
           if (rateChangeCount.current > 2) {
-            resetProgress(true);
+            resetProgress();
             showErrorToast('Repeated speed changes detected. Session invalidated.');
           } else {
             showErrorToast('Playback speed must remain at 1x.');
@@ -718,12 +687,12 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
   const onReady = (e) => {
     setPlayer(e.target);
     ytIframeRef.current = e.target.getIframe();
-    setTimeout(() => seekTo(currentTime), 100);
+    seekTo(currentTime);
   };
 
   const onTimeUpdate = () => {
     const t = getCurrentTime();
-    debouncedSetCurrentTime.current(t);
+    setCurrentTime(t);
 
     if (t > absoluteMaxWatchedRef.current) {
       absoluteMaxWatchedRef.current = t;
@@ -734,7 +703,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
       isNearEndRef.current = true;
     }
 
-    if (t >= duration - 0.5 && duration > 0) {
+    if (t >= duration - 0.5 && absoluteMaxWatchedRef.current >= duration - 0.5 && duration > 0) {
       setIsCompleted(true);
       clearAllIntervals();
       handleMarkComplete();
@@ -880,8 +849,7 @@ const VideoPlayerModal = ({ initialData, onClose }) => {
                     if (e.data === 3) onSeeking();
                     if (e.data === 1 || e.data === 2) onSeeked();
                     if (e.data === 0) {
-                      const currentTime = getCurrentTime();
-                      if (currentTime >= duration - 0.5) {
+                      if (absoluteMaxWatchedRef.current >= duration - 0.5) {
                         setIsCompleted(true);
                         clearAllIntervals();
                         handleMarkComplete();
